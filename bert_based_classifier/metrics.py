@@ -7,6 +7,7 @@ class Metric:
         self.correct_sample = 0
         self.loss = 0
         self.acc = 0
+        self.entroy = torch.nn.CrossEntropyLoss()
 
     def update(self, logits, label):  # loss= max(1+s_i-s_c,0)
         device = logits.device
@@ -16,14 +17,14 @@ class Metric:
         score_correct = torch.gather(logits, dim=1, index=correct_index.unsqueeze(1)).squeeze()
         mask = (label == 0)
         false_logits = torch.masked_select(logits, mask).view(logits.size(0), -1)
-        score_max_false = torch.max(false_logits, dim=1).values
-        loss = 1 + score_max_false - score_correct
-        loss = torch.max(loss, torch.zeros([1, batch]).to(device))
+        # score_max_false = torch.max(false_logits, dim=1).values
+        # loss = 1 + score_max_false - score_correct
+        # loss = torch.max(loss, torch.zeros([1, batch]).to(device))
 
         predict_index = torch.argmax(logits, dim=1)
         correct_num = torch.sum(predict_index == correct_index)
         self.correct_sample += correct_num
-        loss_of_batch = torch.sum(loss)
+        loss_of_batch = self.entroy(logits, correct_index)
         self.loss += loss_of_batch
         return loss_of_batch
 
@@ -55,5 +56,5 @@ class Metric:
 if __name__ == '__main__':
     logits = torch.tensor([[2.9, 0.1, -0.1, -0.4, 0], [0.9, 2.1, -0.1, -0.4, 0], [-0.9, -0.1, -0.1, -0.4, -0.2]])
     label = torch.tensor([[1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 0, 1, 0]])
-    a = Metric()
-    a.update(logits, label)
+    M = Metric()
+    M.update(logits, label)

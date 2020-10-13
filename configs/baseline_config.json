@@ -37,7 +37,7 @@
       //        6
       //      ]
     },
-    "dropout": 0.9
+    "dropout": 0.2
   },
   "data_loader": {
     "batch_sampler": {
