@@ -39,7 +39,7 @@ class RCAMDatasetReader(DatasetReader):
                 yield self.text_to_instance(article, option_list, label_list)
 
     @overrides
-    def text_to_instance(self, article: str, option_list: list, label_list: list) -> Instance:
+    def text_to_instance(self, article: str, option_list: list, label_list: list = None) -> Instance:
         fields: Dict[str, Field] = {}
         metadata = {}
 
@@ -64,8 +64,9 @@ class RCAMDatasetReader(DatasetReader):
 
         article_with_question_field = ListField([TextField(combine, self._token_indexers) for combine in combine_token])
         fields['article_with_question'] = article_with_question_field
-        label_field = ListField([LabelField(label) for label in label_list])
-        fields['label'] = label_field
+        if label_list is not None:
+            label_field = ListField([LabelField(label) for label in label_list])
+            fields['label'] = label_field
         fields['metadata'] = MetadataField(metadata)
 
         return Instance(fields)
@@ -76,12 +77,14 @@ def parse_sentence(line):
     article = data['article']
     question = data['question']
     option_list = []
-    label_list = ['false'] * 5
+    label_list = None
     for i in range(5):
         option_id = "option_" + str(i)
         answer = data[option_id]
         answer_candidate = re.sub('@placeholder', answer, question)
         option_list.append(answer_candidate)
-    right_answer = data['label']
-    label_list[right_answer] = 'true'
+    if 'label' in data:
+        label_list = ['false'] * 5
+        right_answer = data['label']
+        label_list[right_answer] = 'true'
     return article, option_list, label_list

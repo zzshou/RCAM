@@ -44,7 +44,6 @@ class RCAMModel(Model):
         self._text_field_embedder = text_field_embedder
         self._seq2vec = seq2vec
         self._linear_layer = nn.Linear(in_features=self._seq2vec.get_output_dim(), out_features=1)
-        self._label_accuracy = CategoricalAccuracy()
         if dropout:
             self._dropout = Dropout(dropout)
         self._num_choices = num_choices
@@ -65,22 +64,37 @@ class RCAMModel(Model):
         mask = mask.view(-1, tokens.size(-1))
         type_ids = article_with_question['bert_tokens']['type_ids']
         type_ids = type_ids.view(-1, tokens.size(-1))
+
         embedded_text = self._text_field_embedder(
             {"bert_tokens": {"token_ids": tokens, "mask": mask,
                              "type_ids": type_ids}})  # batch * num_choices, seq_len, hidden_dim
         embedded_text = self._seq2vec(embedded_text, mask)  # batch * num_choices, vector_dim
 
-        if self._dropout:
-            embedded_text = self._dropout(embedded_text)
-        logits = self._linear_layer(embedded_text)  # batch* num_choices, num_labels
-        reshaped_logits = logits.view(-1, self._num_choices)  # batch, num_choices
+        if self.training:
+            if self._dropout:
+                embedded_text = self._dropout(embedded_text)
+            logits = self._linear_layer(embedded_text)  # batch* num_choices, num_labels
+            reshaped_logits = logits.view(-1, self._num_choices)  # batch, num_choices
 
-        if label is not None:
             _loss = self.scorer.update(reshaped_logits, label)
-            return {"loss": _loss}
-        else:
-            return reshaped_logits
+            return {  # "reshape_logits": reshaped_logits,
+                "predicted_label": torch.argmax(reshaped_logits, dim=-1),
+                "label": label,
+                "loss": _loss}
+        self.eval()
+        with torch.no_grad():
+            logits = self._linear_layer(embedded_text)  # batch* num_choices, num_labels
+            reshaped_logits = logits.view(-1, self._num_choices)  # batch, num_choices
 
-    def get_metrics(self, reset: bool= False) -> Dict[str, float]:
+            if label is not None:
+                _loss = self.scorer.update(reshaped_logits, label)
+                return {  # "reshape_logits": reshaped_logits,
+                    "predicted_label": torch.argmax(reshaped_logits, dim=-1),
+                    "label": label,
+                    "loss": _loss}
+            return {"predicted_label": torch.argmax(reshaped_logits, dim=-1),
+                    "label": label}
+
+    def get_metrics(self, reset: bool = False) -> Dict[str, float]:
         res = self.scorer.get_metrics(reset=reset)
         return res
