@@ -4,7 +4,7 @@ pip install transformer
 # train
 CUDA_VISIBLE_DEVICES=1 python run_multiple_choice.py \
 --task_name semEval \
---model_name_or_path roberta-xxlarge \
+--model_name_or_path roberta-base \
 --data_dir "sem_data/" \
 --output_dir "out3" \
 --do_train \
