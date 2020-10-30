@@ -80,7 +80,7 @@ def parse_sentence(line, model, k):
     data = json.loads(line, strict=False)
     article = data['article']
     question = data['question']
-    article = process_article(article, question, model, k)
+    article = process_article(article, re.sub('@placeholder', '', question), model, k)
     option_list = []
     label_list = None
     for i in range(5):
