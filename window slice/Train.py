@@ -171,15 +171,3 @@ if __name__ == "__main__":
     print("* Training model...")
     results = train(args=args, train_features=train_features, evaluate_features=evaluate_features, \
           model=multi_choice_model, optimizer=optimizer, max_gradient_norm=10, is_evaluate=True)
-
-
-
-
-
-
-
-
-
-
-
-  
