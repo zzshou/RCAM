@@ -192,3 +192,4 @@ if __name__ == "__main__":
     train_examples = read_recam('SemEval2021-task4/training_data/Task_1_train.jsonl', sep=80, overlap=50, n_slice=10)
     tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
     train_features = convert_examples_to_features(train_examples, tokenizer, max_seq_len=100)
+    
