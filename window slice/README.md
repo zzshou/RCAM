@@ -14,7 +14,7 @@ As you can see, an example contains 4 parts:
 
 ## 2. Data Preprocess
 We do window slice with overlap on the article of each example, and set the max number of slices for too long articles. 
-The placeholder in the question is replaced by 5 choices separately, resulting in 5 questions for every example. Then for each question, we connect it to the back of the slices.
+The placeholder in the question is replaced by 5 choices separately, resulting in 5 questions for every example.
 
 <img src="https://github.com/zzshou/RCAM/blob/master/window%20slice/pictures/data_process.png" width="800" height="180">
 
@@ -23,14 +23,17 @@ The placeholder in the question is replaced by 5 choices separately, resulting i
 This model is highly inspired by [PARADE: Passage Representation Aggregation for Document Reranking](https://arxiv.org/pdf/2008.09093.pdf), which proposes 3 methods (max, atten, transformer) for sloving the limitation of pre-trained models like BERT on the input sequence's length. The architectures for multi choice task are depicted below.
 
 ### 3.1 Max
+we concatenate a pair of slice_j and question_i with a [SEP] token in between and another [SEP] token at the end. Then we put the pairs through BERT model and regard the output embedding of CLS_j_i as the representation of slice_j_question_i. For different j, we use max pooling to get CLS_i, which is the representation of article_question_i. Finally, the CLS_i is projected into logit_i which is a scalar to do prediction and compute the loss by Softmax.
 
 <img src="https://github.com/zzshou/RCAM/blob/master/window%20slice/pictures/max.png" width="1000" height="550">
 
 ### 3.2 Atten
+The main architecture is the same as Max. After getting CLS_j_i, we feed it through a two-layer FNN to learn the attention weight. Then CLS_i is computed by weighted sum of CLS_j_i.
 
 <img src="https://github.com/zzshou/RCAM/blob/master/window%20slice/pictures/atten.png" width="1000" height="550">
 
 ### 3.3 Transformer
+After getting CLS_j_i, we add a randomly initialized CLS embedding for each question, and feed them to the encoder part of transformer. Then we regard the CLS_i vector of the last Transformer output layer as the representation of article_question_i.
 
 <img src="https://github.com/zzshou/RCAM/blob/master/window%20slice/pictures/transformer.png" width="1000" height="550">
 
