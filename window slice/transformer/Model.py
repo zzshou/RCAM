@@ -90,3 +90,4 @@ class TransformerEncoder(nn.Module):
         if return_attns:
             return enc_output, enc_slf_attn_list
         return enc_output, # (n_choice, n_slice+1, d_hid)
+    
