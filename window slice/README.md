@@ -4,7 +4,7 @@ This is a brief description of the model.
 ## 1. Data Review
 Firstly, let's see an example from the training data of task_1:
 
-<img src="https://github.com/zzshou/RCAM/blob/master/window%20slice/pictures/example.png" width="800" height="200">
+<img src="https://github.com/zzshou/RCAM/blob/master/window%20slice/pictures/example.png" width="1000" height="240">
 
 As you can see, an example contains 4 parts:
 * article : the article that provide the context for the question. (The article is too long in this example, so we omit the middle part which is marked in yellow)
