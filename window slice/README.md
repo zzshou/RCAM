@@ -37,7 +37,7 @@ This model is highly inspired by [PARADE: Passage Representation Aggregation for
 ## 4. Model Training & Evaluating
 It's convenient to run the code in terminal.:
 ```
-!python Train.py -data_path='/content/drive/My Drive/SemEval2021-task4/data/training_data/' \
+$ python Train.py -data_path='/content/drive/My Drive/SemEval2021-task4/data/training_data/' \
           -n_choice=5 \
           -max_seq_len=100 \
           -sep=80 \
