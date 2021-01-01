@@ -91,3 +91,4 @@ class MultiChoiceModel(nn.Module):
         loss = -torch.log(torch.exp(logits[labels][0])/torch.exp(logits).sum())
         
         return loss, logits
+    
