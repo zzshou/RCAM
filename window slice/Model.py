@@ -42,7 +42,7 @@ class MultiChoiceModel(nn.Module):
         for param in self.model.parameters():
             param.requires_grad = is_requires_grad
         self.d_hid = model.config.hidden_size
-        # self.attention = SelfAttention(self.d_hid)
+        self.attention = SelfAttention(self.d_hid)
         self.args = args
         self.transformer = TransformerEncoder(self.args.device, self.args.n_choice, self.args.n_layer, \
                             self.args.n_head, self.d_hid, self.d_hid, self.d_hid, self.args.d_inner, self.args.dropout)
