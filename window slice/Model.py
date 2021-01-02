@@ -84,8 +84,18 @@ class MultiChoiceModel(nn.Module):
             document_cls, _, = self.attention(pooled_output) #(n_choice, d_hid)
 
         else: 
+            # 第一种方法：多加一个CLS
+            CLS = torch.randn(self.args.n_choice, 1, self.d_hid) #(n_choice, 1, d_hid)
+            pooled_output = torch.cat((CLS, pooled_output), 1) #(n_choice, n_slice+1, d_hid)
             enc_output = self.transformer(pooled_output) #(n_choice, n_slice+1, d_hid)
             document_cls = enc_output[0][:, 0, :] #(n_choice, d_hid)
+            
+            # 第二种方法：对transformer的output做max pooling
+#             enc_output = self.transformer(pooled_output) #(n_choice, n_slice, d_hid)
+#             document_cls = enc_output[0] #(n_choice, n_slice, d_hid)
+#             document_cls = document_cls.permute(0,2,1) #(n_choice, d_hid, n_slice)
+#             MaxPooling = torch.nn.MaxPool1d(document_cls.shape[-1])
+#             document_cls = MaxPooling(document_cls).squeeze(-1) #(n_choice, d_hid)
 
         logits = self.classifier(document_cls) # (n_choice, 1)
         loss = -torch.log(torch.exp(logits[labels][0])/torch.exp(logits).sum())
