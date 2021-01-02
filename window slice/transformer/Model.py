@@ -76,10 +76,7 @@ class TransformerEncoder(nn.Module):
 
         enc_slf_attn_list = []
 
-        # -- Forward
-        CLS = torch.randn(self.n_choice, 1, self.d_hid).to(self.device)    
-        cls_embeddings = torch.cat((CLS,cls_embeddings), 1)
-        
+        # -- Forward    
         enc_output = self.dropout(self.position_enc(cls_embeddings))
         enc_output = self.layer_norm(enc_output)
 
