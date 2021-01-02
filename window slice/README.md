@@ -38,7 +38,7 @@ After getting CLS_j_i, we add a randomly initialized CLS embedding for each ques
 <img src="https://github.com/zzshou/RCAM/blob/master/window%20slice/pictures/transformer.png" width="1000" height="550">
 
 ## 4. Model Training & Evaluating
-It's convenient to run the code in terminal.:
+It's convenient to run the code in terminal:
 ```
 $ python Train.py -data_path='./SemEval2021-task4/data/training_data/' \
           -n_choice=5 \
