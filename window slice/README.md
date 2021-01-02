@@ -20,7 +20,7 @@ The placeholder in the question is replaced by 5 choices separately, resulting i
 
 ## 3. Model Building
 
-This model is highly inspired by [PARADE: Passage Representation Aggregation for Document Reranking](https://arxiv.org/pdf/2008.09093.pdf), which proposes 3 methods (max, atten, transformer) for sloving the limitation of pre-trained models like BERT on the input sequence's length. The architectures for multi choice task are depicted below.
+This model is highly inspired by [PARADE: Passage Representation Aggregation for Document Reranking](https://arxiv.org/pdf/2008.09093.pdf), which proposes 3 methods (max, atten and transformer) for sloving the limitation of pre-trained models like BERT on the input sequence's length. The architectures for multi choice task are depicted below.
 
 ### 3.1 Max
 we concatenate a pair of slice_j and question_i with a [SEP] token in between and another [SEP] token at the end. Then we put the pairs through BERT model and regard the output embedding of CLS_j_i as the representation of slice_j_question_i. For different j, we use max pooling to get CLS_i, which is the representation of article_question_i. Finally, the CLS_i is projected into logit_i which is a scalar to do prediction and compute the loss by Softmax.
