@@ -40,21 +40,27 @@ After getting CLS_j_i, we add a randomly initialized CLS embedding for each ques
 ## 4. Model Training & Evaluating
 It's convenient to run the code in terminal:
 ```
-$ python Train.py -data_path='./SemEval2021-task4/data/training_data/' \
+$ python Train.py -train_data_path='/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_train.jsonl' \
+          -dev_data_path='/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_dev.jsonl' \
           -n_choice=5 \
           -max_seq_len=100 \
           -sep=80 \
           -overlap=30 \
           -n_slice=10 \
-          -bert_model='albert-large-v2' \
+          -bert_model='albert-base-v2' \
           -method='transformer' \
-          -n_layer=2 \
-          -n_head=6 \
-          -d_inner=2048 \
-          -dropout=0.1 \
+          -transformer_n_layer=2 \
+          -transformer_n_head=12 \
+          -transformer_d_inner=2048 \
+          -transformer_dropout=0.1 \
+          -lstm_n_layer=1 \
+          -lstm_dropout=0.1 \
           -epoch=3 \
+          -batch_size=1 \
+          -gradient_accumulation_steps=4 \
+          -weight_decay=0.01 \
           -lr=1e-5 \
-          -save_path='./SemEval2021-task4/model/log/'
+          -save_path='/content/drive/My Drive/SemEval2021-task4/model/log/'
 ```
 
 For the meaning of each parameters, please refer to the file named "Config.py".
