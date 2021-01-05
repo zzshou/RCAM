@@ -56,15 +56,11 @@ class EncoderLayer(nn.Module):
 class TransformerEncoder(nn.Module):
     ''' A encoder model with self attention mechanism. '''
 
-    def __init__(
-            self, device, n_choice, n_layers, n_head, d_k, d_v,
-            d_model, d_inner, dropout=0.1, n_slice=10):
+    def __init__(self, n_layers, n_head, d_k, d_v, d_model, d_inner, dropout=0.1, n_slice=10):
 
         super().__init__()
         
-        self.device = device
         self.d_hid = d_model
-        self.n_choice = n_choice
         self.position_enc = PositionalEncoding(d_hid=self.d_hid, n_position=n_slice+1)
         self.dropout = nn.Dropout(p=dropout)
         self.layer_stack = nn.ModuleList([
@@ -76,7 +72,7 @@ class TransformerEncoder(nn.Module):
 
         enc_slf_attn_list = []
 
-        # -- Forward    
+        # -- Forward
         enc_output = self.dropout(self.position_enc(cls_embeddings))
         enc_output = self.layer_norm(enc_output)
 
@@ -87,4 +83,3 @@ class TransformerEncoder(nn.Module):
         if return_attns:
             return enc_output, enc_slf_attn_list
         return enc_output, # (n_choice, n_slice+1, d_hid)
-    
