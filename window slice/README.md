@@ -33,9 +33,15 @@ The main architecture is the same as Max. After getting CLS_j_i, we feed it thro
 <img src="https://github.com/zzshou/RCAM/blob/master/window%20slice/pictures/atten.png" width="1000" height="550">
 
 ### 3.3 Transformer
+#### 3.3.1 Adding CLS
 After getting CLS_j_i, we add a randomly initialized CLS embedding for each question, and feed them to the encoder part of transformer. Then we regard the CLS_i vector of the last Transformer output layer as the representation of article_question_i.
 
-<img src="https://github.com/zzshou/RCAM/blob/master/window%20slice/pictures/transformer.png" width="1000" height="550">
+<img src="https://github.com/zzshou/RCAM/blob/master/window%20slice/pictures/transformer_adding_cls.png" width="1000" height="550">
+
+#### 3.3.2 Max pooling
+Another way is putting CLS_j_i to transformer and applying max pooling to the output of transformer to acquire the CLS_i vector which is the representation of article_question_i.
+
+<img src="https://github.com/zzshou/RCAM/blob/master/window%20slice/pictures/transformer_max.png" width="1000" height="550">
 
 ## 4. Model Training & Evaluating
 It's convenient to run the code in terminal:
