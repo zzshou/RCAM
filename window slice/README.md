@@ -43,6 +43,11 @@ Another way is putting CLS_j_i to transformer and applying max pooling to the ou
 
 <img src="https://github.com/zzshou/RCAM/blob/master/window%20slice/pictures/transformer_max.png" width="1000" height="550">
 
+### 3.4 LSTM
+After getting CLS_j_i, we feed them through LSTM, and regard the last hidden state of last layer output of LSTM as the representation of article_question_i.
+
+<img src="https://github.com/zzshou/RCAM/blob/master/window%20slice/pictures/lstm.png" width="1000" height="550">
+
 ## 4. Model Training & Evaluating
 It's convenient to run the code in terminal:
 ```
@@ -65,7 +70,7 @@ $ python Train.py -train_data_path='/content/drive/My Drive/SemEval2021-task4/da
           -batch_size=1 \
           -gradient_accumulation_steps=4 \
           -weight_decay=0.01 \
-          -lr=1e-5 \
+          -lr=2e-5 \
           -save_path='/content/drive/My Drive/SemEval2021-task4/model/log/'
 ```
 
