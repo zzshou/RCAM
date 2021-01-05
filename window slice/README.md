@@ -39,7 +39,7 @@ After getting CLS_j_i, we add a randomly initialized CLS embedding for each ques
 <img src="https://github.com/zzshou/RCAM/blob/master/window%20slice/pictures/transformer_adding_cls.png" width="1000" height="550">
 
 #### 3.3.2 Max pooling
-Another way is putting CLS_j_i to transformer and applying max pooling to the output of transformer to acquire the CLS_i vector which is the representation of article_question_i.
+Another way is to put CLS_j_i to transformer and apply max pooling to the output of transformer to acquire the CLS_i vector which is the representation of article_question_i.
 
 <img src="https://github.com/zzshou/RCAM/blob/master/window%20slice/pictures/transformer_max.png" width="1000" height="550">
 
