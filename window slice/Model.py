@@ -77,6 +77,7 @@ class Transformer(nn.Module):
         super().__init__()
         self.args = args
         self.d_hid = d_hid
+        self.CLS = torch.randn(1, self.d_hid)
         self.transformer = TransformerEncoder(
                                                 n_layers = self.args.transformer_n_layer,
                                                 n_head = self.args.transformer_n_head, 
@@ -100,7 +101,7 @@ class Transformer(nn.Module):
       
     def forward(self, pooled_output, padding):
         # # 第一种方法：多加一个CLS
-        # CLS = torch.randn(pooled_output.size()[0], 1, self.d_hid).to(self.args.device) #(batch*n_choice, 1, d_hid)
+        # CLS = self.CLS.unsqueeze(0).expand(pooled_output.size()[0], 1, self.d_hid).to(self.args.device) #(batch*n_choice, 1, d_hid)
         # pooled_output = torch.cat((CLS, pooled_output), 1) #(batch*n_choice, n_slice+1, d_hid)
         # mask = self.create_transformer_mask(padding+1, self.args.n_slice+1, self.args.n_choice).to(self.args.device) #(batch*n_choice, n_slice, n_slice)
         # enc_output = self.transformer(pooled_output, mask) 
