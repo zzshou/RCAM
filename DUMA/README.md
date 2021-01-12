@@ -1,6 +1,7 @@
 # DUMA (DUal Multi-head Co-Attention)
 ## 1. 模型架构
 模型主要参考了[《DUMA: Reading Comprehension with Transposition Thinking》](https://arxiv.org/pdf/2001.09415.pdf)，架构如下图所示 (与原论文略有不同，这个是我画的，可能有些地方不易理解)：
+
 <img src="https://github.com/zzshou/RCAM/blob/master/DUMA/model%20architecture.png" width="650" height="650">
 
 首先，对于每个example，我们把5个option填入question中，并且分别与article进行拼接，得到5个序列。接着，我们将这些序列按照max_seq_len进行截断，输入到BERT (论文中用的是albert-xxlarge-v2) 进行encoding，得到每个token经过encoding后的embedding (sequencial output)。此时序列的embedding包含了浏览article/question/option后的信息。
@@ -34,7 +35,7 @@ $ python Train.py -train_data_path='/content/drive/My Drive/SemEval2021-task4/da
           -lr=5e-6 \
           -save_path='/content/drive/My Drive/SemEval2021-task4/model/log/'
 ```
-模型训练3轮，每400步在验证集上评估结果，并保存验证集上准确率最高的模型的参数。最终测试集准确率达到92%以上，验证集上结果如下：  
+我在Colab Pro上将模型训练了3轮，每训练400步在验证集上评估结果，并保存验证集上准确率最高的模型的参数。每轮训练时间大概在40分钟，上述配置占用显存15GB。最终测试集准确率达到92%以上，验证集上结果如下：  
 ***** Eval results per 400 training steps *****  
 eval_loss = 0.5987  
 eval_accuracy = 78.73%  
