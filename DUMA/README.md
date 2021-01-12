@@ -68,4 +68,4 @@ eval_accuracy = 84.23%
 我采用了该方法进行了尝试，即先在TASK_1和TASK_2的训练集进行粗略的学习(training epoch=1)，再在TASK_1的训练集进一步学习，最后在TASK_1的验证集上进行评估，效果不升反降 (基于albert_base_v2，albert_xxlarge_v2还没有尝试)。此外，直接在TASK_1和TASK_2的训练集进行细致的学习 (加大training epoch)，在TASK_1的验证集上进行评估，效果不升反降 (基于albert_base_v2，albert_xxlarge_v2还没有尝试)。
 
 ## 4. 一些思考
-感觉可以在DUMA模型的思路上进行改进，来更好地适应抽象阅读理解的任务。比如借助CNN来提取句子的summary信息？灵感来自于这篇attention与CNN结合的论文[《ABCNN: Attention-Based Convolutional Neural Networkfor Modeling Sentence Pairs》](https://arxiv.org/pdf/1512.05193.pdf). 或许可以设计出更好的模型在多个阅读理解多选题任务上得到提升。
+感觉可以在DUMA模型的思路上进行改进，来更好地适应抽象阅读理解的任务。比如借助CNN来提取句子的summary信息？灵感来自于这篇attention与CNN结合的论文[《ABCNN: Attention-Based Convolutional Neural Networkfor Modeling Sentence Pairs》](https://arxiv.org/pdf/1512.05193.pdf)。 或许可以设计出其他更好的模型，在多个阅读理解多选题任务上得到提升。
