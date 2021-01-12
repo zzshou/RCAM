@@ -10,7 +10,7 @@
 最后，co-attention层的输出question-option-aware article representation与article-aware question-option representation仍然是每个token的embedding的形式 (维度是batch_size * num_of_choice, max_seq_len, dim_of_embedding)。我们对其做一维的平均池化 (AvgPool1d)，得到两个维度是 (batch_size * num_of_choice, dim_of_embedding)的向量，包含了汇总的信息 (p.s. 我们通过实验发现AvgPool1d的效果好于MaxPool1d)。然后，我们将两个向量通过concatenation的方式进行融合，得到维度是 (batch_size * num_of_choice, dim_of_embedding * 2)的向量 (p.s. 我们通过实验发现concatenation的效果好于element-wise multiplication, element-wise summation)。最后，我们将该向量输入到一个单层的fully-connected neural network (FNN)，得到article-question-option_i的logit。通过对logits做softmax即可得到每个option的概率，并且计算loss (p.s. 我们通过实验发现，单层的FNN比两层的第一层带激活函数的FNN效果更好)。
 
 ## 2. 模型训练和验证
-可以直接在命令行运行Train.py文件，并快速调节超参数：
+可以直接在命令行运行Train.py文件，并快速调节超参数 (每个参数的具体含义请参照Config.py)：
 ```
 $ python Train.py -train_data_path='/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_train.jsonl' \
           -dev_data_path='/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_dev.jsonl' \
@@ -34,3 +34,28 @@ $ python Train.py -train_data_path='/content/drive/My Drive/SemEval2021-task4/da
           -lr=5e-6 \
           -save_path='/content/drive/My Drive/SemEval2021-task4/model/log/'
 ```
+模型训练3轮，每400步在验证集上评估结果，并保存验证集上准确率最高的模型的参数。最终测试集准确率达到92%以上，验证集上结果如下：  
+***** Eval results per 400 training steps *****  
+eval_loss = 0.5987  
+eval_accuracy = 78.73%  
+eval_loss = 0.5601  
+eval_accuracy = 80.76%  
+eval_loss = 0.6105  
+eval_accuracy = 82.68%  
+eval_loss = 0.5064  
+eval_accuracy = 82.92%  
+eval_loss = 0.7996  
+eval_accuracy = 82.8%  
+eval_loss = 0.7899  
+eval_accuracy = 83.27%  
+eval_loss = 0.7126  
+eval_accuracy = 84.47%  
+eval_loss = 0.7249  
+eval_accuracy = 84.47%  
+eval_loss = 0.7897  
+eval_accuracy = **84.59%**  
+eval_loss = 0.828  
+eval_accuracy = 84.23%  
+
+可以看到模型在训练后期出现了过拟合。
+该超参数的配置并不代表最优，只是一次实验的结果。可以通过继续体哦阿姐超参数已得到更好的结果。
