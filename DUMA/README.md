@@ -58,4 +58,7 @@ eval_loss = 0.828
 eval_accuracy = 84.23%  
 
 可以看到模型在训练后期出现了过拟合。
-该超参数的配置并不代表最优，只是一次实验的结果。可以通过继续体哦阿姐超参数已得到更好的结果。
+该超参数的配置并不代表最优，只是一次实验的结果。可以通过继续调节超参数以得到更好的结果。
+
+## 3. 其他参考文献
+2020年发表的一篇论文[《Multi-task Learning with Multi-head Attention for Multi-choice Reading Comprehension》](https://arxiv.org/pdf/2003.04992.pdf)对阅读理解多选题近期的模型进行了总结，并在DUMA模型的基础上进行了多任务学习 (Multi-task Learning)，即先在DREAM和RACE数据集上进行粗略的学习，再在DREAM数据集上进一步学习，取得了SOTA的效果。我采用了该方法进行了尝试，即先在TASK_1和TASK_2的训练集进行粗略的学习(training epoch=1)，再在TASK_1的训练集进一步学习，最后在TASK_1的验证集上进行评估，效果不升反降 (基于albert_base_v2，albert_xxlarge_v2还没有尝试)。此外，直接在TASK_1和TASK_2的训练集进行细致的学习 (加大training epoch)，在TASK_1的验证集上进行评估，效果不升反降 (基于albert_base_v2，albert_xxlarge_v2还没有尝试)。
