@@ -4,7 +4,6 @@
 
 <img src="https://github.com/zzshou/RCAM/blob/master/DUMA/model%20architecture.png" width="650" height="650">
 
-
 首先，对于每个example，我们把5个option填入question中，并且分别与article进行拼接，得到5个序列。接着，我们将这些序列按照max_seq_len进行截断，输入到BERT (论文中用的是albert-xxlarge-v2) 进行encoding，得到每个token经过encoding后的embedding (sequencial output)。此时序列的embedding包含了浏览article/question/option后的信息。
 
 其次，将article与question/option分开，二者输入co-attention层以获取更细微的信息。co-attention层本质上就是transformer中的multi-head attention。**此处co-attention层的构造与原论文中略有不同**。首先我们将question/option视为multi-head attention中的query，article视为key和value，来计算question-option-aware article representation，该过程模拟了人类带着对问题和选项的印象重读文章细节的过程。接着我们将article视为multi-head attention中的query，question-option-aware article representation视为key和value，来计算article-aware question-option representation，该过程模拟了人类在对文章有了更深层次理解后重新思考答案的过程 (p.s. 通过实验发现，这两个步骤的顺序如果颠倒，模型的效果会变差)。这样的co-attention层可以堆叠k次，但论文中指出，k增大并不会产生更好的效果。
