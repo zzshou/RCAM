@@ -50,9 +50,9 @@ $ python Train.py -train_data_path='/content/drive/My Drive/SemEval2021-task4/da
 |      3600      |  eval_loss = 0.7897<br>eval_accuracy = **84.59%** | eval_loss = 0.8123<br>eval_accuracy = 83.03% |
 |      4000      |   eval_loss = 0.828<br>eval_accuracy = 84.23%  | eval_loss = 0.8508<br>eval_accuracy = 83.15% |
 
-可以看到改进的模型在验证集上的准确率优于原论文中的模型，且更不易出现过拟合。
+可以看出改进的模型在验证集上的准确率优于原论文中的模型，且更不易出现过拟合。
 
-该超参数的配置并不代表最优，只是一次实验的结果，可以通过继续调节超参数以获得更好的结果。
+(p.s. 该超参数的配置并不代表最优，只是一次实验的结果，可以通过继续调节超参数以获得更好的结果。)
 
 
 ## 3. 其他参考文献
