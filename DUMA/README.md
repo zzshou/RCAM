@@ -35,58 +35,24 @@ $ python Train.py -train_data_path='/content/drive/My Drive/SemEval2021-task4/da
           -lr=5e-6 \
           -save_path='/content/drive/My Drive/SemEval2021-task4/model/log/'
 ```
-我在Colab Pro上将模型训练了3轮，每训练400步在验证集上评估结果，并保存验证集上准确率最高的模型的参数。每轮训练时间大概在40分钟，上述配置占用显存15GB。最终训练集的准确率达到92%以上，验证集上结果如下：  
+我在Colab Pro上将改进的DUMA模型和原论文中的DUMA模型使用相同的参数都训练了3轮，每训练400步在验证集上评估结果，并保存验证集上准确率最高的模型的参数。每轮训练时间大概在40分钟，上述配置占用显存15GB。最终训练集的准确率达到92%以上，验证集上结果如下：  
 
-***** Eval results per 400 training steps *****  
-eval_loss = 0.5987  
-eval_accuracy = 78.73%  
-eval_loss = 0.5601  
-eval_accuracy = 80.76%  
-eval_loss = 0.6105  
-eval_accuracy = 82.68%  
-eval_loss = 0.5064  
-eval_accuracy = 82.92%  
-eval_loss = 0.7996  
-eval_accuracy = 82.8%  
-eval_loss = 0.7899  
-eval_accuracy = 83.27%  
-eval_loss = 0.7126  
-eval_accuracy = 84.47%  
-eval_loss = 0.7249  
-eval_accuracy = 84.47%  
-eval_loss = 0.7897  
-eval_accuracy = **84.59%**  
-eval_loss = 0.828  
-eval_accuracy = 84.23%  
+|          training steps          |          改进DUMA          | DUMA |
+|:-----------------------:|:-----:|:-----:|
+|  400  |  eval_loss = 0.5987<br>eval_accuracy = 78.73% | eval_loss = 0.6338<br>eval_accuracy = 78.02% |
+|  800  |  eval_loss = 0.5601<br>eval_accuracy = 80.76% | eval_loss = 0.5894<br>eval_accuracy = 79.57% |
+| 1200 |  eval_loss = 0.6105<br>eval_accuracy = 82.68% | eval_loss = 0.5197<br>eval_accuracy = 81.96% |
+| 1600 |  eval_loss = 0.5064<br>eval_accuracy = 82.92% | eval_loss = 0.5399<br>eval_accuracy = **83.63%** |
+|      2000     |  eval_loss = 0.7996<br>eval_accuracy = 82.8% | eval_loss = 0.6288<br>eval_accuracy = 82.92% |
+|      2400     |  eval_loss = 0.7899<br>eval_accuracy = 83.27% | eval_loss = 0.7144<br>eval_accuracy = 82.08% |
+|       2800      |  eval_loss = 0.7126<br>eval_accuracy = 84.47% | eval_loss = 0.7659<br>eval_accuracy = 82.92% |
+|       3200      |  eval_loss = 0.7249<br>eval_accuracy = 84.47% | eval_loss = 0.8202<br>eval_accuracy = 82.68% |
+|      3600      |  eval_loss = 0.7897<br>eval_accuracy = **84.59%** | eval_loss = 0.8123<br>eval_accuracy = 83.03% |
+|      4000      |   eval_loss = 0.828<br>eval_accuracy = 84.23%  | eval_loss = 0.8508<br>eval_accuracy = 83.15% |
 
-可以看到模型在训练后期出现了过拟合。
+可以看到改进的模型在验证集上的准确率优于原论文中的模型，且更不易出现过拟合。
+
 该超参数的配置并不代表最优，只是一次实验的结果，可以通过继续调节超参数以获得更好的结果。
-
-使用相同的参数配置训练DUMA原论文中的模型，得到验证集上结果如下：
-
-***** Eval results per 400 training steps *****
-eval_loss = 0.6338
-eval_accuracy = 78.02%
-eval_loss = 0.5894
-eval_accuracy = 79.57%
-eval_loss = 0.5197
-eval_accuracy = 81.96%
-eval_loss = 0.5399
-eval_accuracy = 83.63%
-eval_loss = 0.6288
-eval_accuracy = 82.92%
-eval_loss = 0.7144
-eval_accuracy = 82.08%
-eval_loss = 0.7659
-eval_accuracy = 82.92%
-eval_loss = 0.8202
-eval_accuracy = 82.68%
-eval_loss = 0.8123
-eval_accuracy = 83.03%
-eval_loss = 0.8508
-eval_accuracy = 83.15%
-
-可以看出改进的模型效果是优于原论文中的模型的。
 
 
 ## 3. 其他参考文献
