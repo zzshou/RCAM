@@ -6,12 +6,15 @@ Created on Fri Jan  1 11:34:20 2021
 """
 
 import jsonlines
+import torch
 from transformers import AutoTokenizer
+from torch.utils.data import TensorDataset
 
 
 class SemEvalExample(object):
-    def __init__(self, document, choice_0, choice_1, choice_2, choice_3, choice_4, label=None):
+    def __init__(self, document, padding, choice_0, choice_1, choice_2, choice_3, choice_4, label=None):
         self.document = document
+        self.padding = padding
         self.choices = [
             choice_0,
             choice_1,
@@ -27,6 +30,7 @@ class SemEvalExample(object):
     def __repr__(self):
         attributes = [
             "document: {}".format(self.document),
+            "padding: {}".format(self.padding),
             "choice_0: {}".format(self.choices[0]),
             "choice_1: {}".format(self.choices[1]),
             "choice_2: {}".format(self.choices[2]),
@@ -41,11 +45,12 @@ class SemEvalExample(object):
 
 
 class InputFeatures(object):
-    def __init__(self, choices_features, label):
+    def __init__(self, choices_features, padding, label):
         self.choices_features = [
             {"input_ids": input_ids, "input_mask": input_mask, "segment_ids": segment_ids}
             for _, input_ids, input_mask, segment_ids in choices_features
         ]
+        self.padding = padding
         self.label = label
 
 
@@ -105,20 +110,23 @@ def read_recam(path, sep, overlap, n_slice):
         reader = jsonlines.Reader(f)
         examples = []
         for line in reader:
-            example=SemEvalExample(
-            document=get_split(line['article'], sep, overlap)[: n_slice],
-            choice_0=line['question'].replace('@placeholder', line['option_0']),
-            choice_1=line['question'].replace('@placeholder', line['option_1']),
-            choice_2=line['question'].replace('@placeholder', line['option_2']),
-            choice_3=line['question'].replace('@placeholder', line['option_3']),
-            choice_4=line['question'].replace('@placeholder', line['option_4']),
-            label=int(line['label']),
+            document = get_split(line['article'], sep, overlap)[: n_slice]
+            
+            example = SemEvalExample(
+            document = document,
+            padding = len(document),
+            choice_0 = line['question'].replace('@placeholder', line['option_0']),
+            choice_1 = line['question'].replace('@placeholder', line['option_1']),
+            choice_2 = line['question'].replace('@placeholder', line['option_2']),
+            choice_3 = line['question'].replace('@placeholder', line['option_3']),
+            choice_4 = line['question'].replace('@placeholder', line['option_4']),
+            label = int(line['label']),
             )
             examples.append(example)
         return examples
     
     
-def convert_examples_to_features(examples, tokenizer, max_seq_len):
+def convert_examples_to_features(examples, n_slice, tokenizer, max_seq_len):
     """Loads a data file into a list of `InputBatch`s."""
     
     features = []
@@ -133,22 +141,29 @@ def convert_examples_to_features(examples, tokenizer, max_seq_len):
             paragraph_input_ids = []
             paragraph_input_mask = []
             paragraph_segment_ids = []
+            
+            for i in range(n_slice):
+                if i < example.padding:
+                    paragraph_tokens = tokenizer.tokenize(example.document[i])
+                    _truncate_seq_pair(paragraph_tokens, choice_tokens, max_seq_len - 3)
 
-            for paragraph in example.document:
-                paragraph_tokens = tokenizer.tokenize(paragraph)
-                _truncate_seq_pair(paragraph_tokens, choice_tokens, max_seq_len - 3)
+                    tokens = ["[CLS]"] + paragraph_tokens + ["[SEP]"] + choice_tokens + ["[SEP]"]
+                    segment_ids = [0] * (len(paragraph_tokens) + 2) + [1] * (len(choice_tokens) + 1)
 
-                tokens = ["[CLS]"] + paragraph_tokens + ["[SEP]"] + choice_tokens + ["[SEP]"]
-                segment_ids = [0] * (len(paragraph_tokens) + 2) + [1] * (len(choice_tokens) + 1)
+                    input_ids = tokenizer.convert_tokens_to_ids(tokens)
+                    input_mask = [1] * len(input_ids)
 
-                input_ids = tokenizer.convert_tokens_to_ids(tokens)
-                input_mask = [1] * len(input_ids)
-
-                # Zero-pad up to the sequence length.
-                padding = [0] * (max_seq_len - len(input_ids))
-                input_ids += padding
-                input_mask += padding
-                segment_ids += padding
+                    # Zero-pad up to the sequence length.
+                    padding = [0] * (max_seq_len - len(input_ids))
+                    input_ids += padding
+                    input_mask += padding
+                    segment_ids += padding
+                
+                else:
+                    tokens = ["[PAD]"] * max_seq_len
+                    input_ids = [0] * max_seq_len
+                    input_mask = [0] * max_seq_len
+                    segment_ids = [0] * max_seq_len
 
                 assert len(input_ids) == max_seq_len
                 assert len(input_mask) == max_seq_len
@@ -161,8 +176,9 @@ def convert_examples_to_features(examples, tokenizer, max_seq_len):
 
             choices_features.append((paragraph_tokens, paragraph_input_ids, paragraph_input_mask, paragraph_segment_ids))
 
+        padding = example.padding
         label = example.label
-        features.append(InputFeatures(choices_features=choices_features, label=label))
+        features.append(InputFeatures(choices_features=choices_features, padding=padding, label=label))
 
     return features
 
@@ -184,12 +200,23 @@ def _truncate_seq_pair(tokens_a, tokens_b, max_length):
             tokens_b.pop()
             
             
-def select_field(feature, field):
-    return [choice[field] for choice in feature.choices_features]
+def select_field(features, field):
+    return [[choice[field] for choice in feature.choices_features] for feature in features]
+
+
+def convert_features_to_dataset(features):
+    all_input_ids = torch.tensor(select_field(features, "input_ids"), dtype=torch.long)
+    all_input_mask = torch.tensor(select_field(features, "input_mask"), dtype=torch.long)
+    all_segment_ids = torch.tensor(select_field(features, "segment_ids"), dtype=torch.long)
+    all_padding = torch.tensor([f.padding for f in features], dtype=torch.long)
+    all_label = torch.tensor([f.label for f in features], dtype=torch.long)
+    return TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_padding, all_label)
 
 
 if __name__ == "__main__":
-    train_examples = read_recam('SemEval2021-task4/training_data/Task_1_train.jsonl', sep=80, overlap=50, n_slice=10)
-    tokenizer = AutoTokenizer.from_pretrained('bert-base-uncased')
-    train_features = convert_examples_to_features(train_examples, tokenizer, max_seq_len=100)
-    
+    train_examples = read_recam('/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_train.jsonl', sep=80, overlap=50, n_slice=10)
+    tokenizer = AutoTokenizer.from_pretrained('albert-base-v2')
+    train_features = convert_examples_to_features(train_examples, 10, tokenizer, max_seq_len=100)
+    train_dataset = convert_features_to_dataset(train_features)
+    train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=1)
+    pass

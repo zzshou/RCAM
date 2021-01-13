@@ -33,28 +33,45 @@ The main architecture is the same as Max. After getting CLS_j_i, we feed it thro
 <img src="https://github.com/zzshou/RCAM/blob/master/window%20slice/pictures/atten.png" width="1000" height="550">
 
 ### 3.3 Transformer
+#### 3.3.1 Adding CLS
 After getting CLS_j_i, we add a randomly initialized CLS embedding for each question, and feed them to the encoder part of transformer. Then we regard the CLS_i vector of the last Transformer output layer as the representation of article_question_i.
 
-<img src="https://github.com/zzshou/RCAM/blob/master/window%20slice/pictures/transformer.png" width="1000" height="550">
+<img src="https://github.com/zzshou/RCAM/blob/master/window%20slice/pictures/transformer_adding_cls.png" width="1000" height="550">
+
+#### 3.3.2 Max pooling
+Another way is to put CLS_j_i to transformer and apply max pooling to the output of transformer to acquire the CLS_i vector which is the representation of article_question_i.
+
+<img src="https://github.com/zzshou/RCAM/blob/master/window%20slice/pictures/transformer_max.png" width="1000" height="550">
+
+### 3.4 LSTM
+After getting CLS_j_i, we feed them through LSTM, and regard the last hidden state of last layer output of LSTM as the representation of article_question_i.
+
+<img src="https://github.com/zzshou/RCAM/blob/master/window%20slice/pictures/lstm.png" width="1000" height="550">
 
 ## 4. Model Training & Evaluating
 It's convenient to run the code in terminal:
 ```
-$ python Train.py -data_path='./SemEval2021-task4/data/training_data/' \
+$ python Train.py -train_data_path='/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_train.jsonl' \
+          -dev_data_path='/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_dev.jsonl' \
           -n_choice=5 \
           -max_seq_len=100 \
           -sep=80 \
           -overlap=30 \
           -n_slice=10 \
-          -bert_model='albert-large-v2' \
+          -bert_model='albert-base-v2' \
           -method='transformer' \
-          -n_layer=2 \
-          -n_head=6 \
-          -d_inner=2048 \
-          -dropout=0.1 \
+          -transformer_n_layer=2 \
+          -transformer_n_head=12 \
+          -transformer_d_inner=2048 \
+          -transformer_dropout=0.1 \
+          -lstm_n_layer=1 \
+          -lstm_dropout=0.1 \
           -epoch=3 \
-          -lr=1e-5 \
-          -save_path='./SemEval2021-task4/model/log/'
+          -batch_size=2 \
+          -gradient_accumulation_steps=4 \
+          -weight_decay=0.01 \
+          -lr=2e-5 \
+          -save_path='/content/drive/My Drive/SemEval2021-task4/model/log/'
 ```
 
 For the meaning of each parameters, please refer to the file named "Config.py".
