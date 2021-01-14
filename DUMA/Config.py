@@ -17,8 +17,8 @@ def arg_conf():
     parser.add_argument('-random_seed', type=int, default=2021, help='set the random seed so that we can reporduce the result.')
     
     # parameters of data processor
-    parser.add_argument('-train_data_path', default=None)
-    parser.add_argument('-dev_data_path', default=None)
+    parser.add_argument('-train_data_paths', nargs='+', help='data paths of multi train datasets.')
+    parser.add_argument('-dev_data_path', default=None, help='data path of eval dataset.')
     parser.add_argument('-n_choice', type=int, default=5, help='number of choices.')
     parser.add_argument('-max_seq_len', type=int, default=100, help='max sequence length of article + question.')
     
