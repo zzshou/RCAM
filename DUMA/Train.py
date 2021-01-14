@@ -9,9 +9,11 @@ Created on Mon Jan 11 12:59:19 2021
 import os
 import time
 import logging
+import random
 import numpy as np
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader, RandomSampler
 from tqdm import tqdm, trange
 from transformers import AutoTokenizer, AutoModel
 from transformers.optimization import AdamW
@@ -24,7 +26,7 @@ from Model import MultiChoiceModel
 
 def seed_torch(seed=2021):
     """set the random seed"""
-    # random.seed(seed)
+    random.seed(seed)
     os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -38,15 +40,43 @@ def accuracy(out, labels):
     return np.sum(outputs == labels)
 
 
-def train(args, train_dataset, model, eval_dataset):
+class InfiniteDataLoader:
+    def __init__(self, data_loader):
+        self.data_loader = data_loader
+        self.data_iter = iter(data_loader)
+
+    def get_next(self):
+        try:
+            data = next(self.data_iter)
+        except StopIteration:
+            # StopIteration is thrown if dataset ends
+            # reinitialize data loader
+            self.data_iter = iter(self.data_loader)
+            data = next(self.data_iter)
+        return data
+    
+    
+def train(args, train_datasets, model, eval_dataset):
     """ train the model """
-    train_dataloader = torch.utils.data.DataLoader(train_dataset, shuffle=True, batch_size=args.batch_size)
+    
+    train_iters = []
+    tr_batches = []
+    
+    for _, train_dataset in enumerate(train_datasets):
+        train_sampler = RandomSampler(train_dataset)
+        train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=args.batch_size)
+        train_iters.append(InfiniteDataLoader(train_dataloader))
+        tr_batches.append(len(train_dataloader))
+        
+    ## set sampling proportion
+    total_n_tr_batches = sum(tr_batches)
+    sampling_prob = [float(n_batches) / total_n_tr_batches for n_batches in tr_batches]
     
     if args.max_train_steps > 0:
         total_steps = args.max_train_steps
-        args.n_epoch = args.max_train_steps // (len(train_dataloader) // args.gradient_accumulation_steps) + 1
+        args.n_epoch = args.max_train_steps // (total_n_tr_batches // args.gradient_accumulation_steps) + 1
     else:
-        total_steps = len(train_dataloader) // args.gradient_accumulation_steps * args.n_epoch
+        total_steps = total_n_tr_batches // args.gradient_accumulation_steps * args.n_epoch
   
     no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
     optimizer_grouped_parameters = [
@@ -81,15 +111,22 @@ def train(args, train_dataset, model, eval_dataset):
         output_eval_file = os.path.join(args.save_path, "eval_results.txt")
         with open(output_eval_file, "w") as writer:
             writer.write("***** Eval results per %d training steps *****\n" % args.evaluate_steps)
-                
-    for _ in train_iterator:
-        epoch_iterator = tqdm(train_dataloader, desc="Training")
+    
+    # added here for reproductibility
+    seed_torch(args.random_seed)
+    
+    for epoch in train_iterator:
+        epoch_iterator = tqdm(range(total_n_tr_batches), desc="Training")
         batch_time_avg = 0.0
         train_accuracy = 0; nb_train_examples = 0
         
-        for step, batch in enumerate(epoch_iterator):
+        for step in epoch_iterator:
             batch_start = time.time()
             model.train()
+            
+            # select task id
+            task_id = np.argmax(np.random.multinomial(1, sampling_prob))
+            batch = train_iters[task_id].get_next()
             batch = tuple(t.to(args.device) for t in batch)
             loss, logits = model(
                                     input_ids = batch[0], 
@@ -141,7 +178,7 @@ def train(args, train_dataset, model, eval_dataset):
                 break
         
         train_accuracy = train_accuracy / nb_train_examples
-        logger.info("train_accuracy = {:.2%}".format(train_accuracy))
+        logger.info("After epoch {:}, train_accuracy = {:.2%}".format(epoch, train_accuracy))
         
         if args.max_train_steps > 0 and global_step > args.max_train_steps:
             epoch_iterator.close()
@@ -223,9 +260,14 @@ if __name__ == "__main__":
     # data read and process
     logger.info("***** Loading training data and evaluating data *****")
     tokenizer = AutoTokenizer.from_pretrained(args.bert_model)
-    train_examples = read_recam(args.train_data_path)
-    train_features = convert_examples_to_features(train_examples, tokenizer, max_seq_len=args.max_seq_len)
-    train_dataset = convert_features_to_dataset(train_features)
+    
+    train_datasets = []
+    for train_data_path in args.train_data_paths:
+        train_examples = read_recam(train_data_path)
+        train_features = convert_examples_to_features(train_examples, tokenizer, max_seq_len=args.max_seq_len)
+        train_dataset = convert_features_to_dataset(train_features)
+        train_datasets.append(train_dataset)
+        
     evaluate_examples = read_recam(args.dev_data_path)
     evaluate_features = convert_examples_to_features(evaluate_examples, tokenizer, max_seq_len=args.max_seq_len)
     evaluate_dataset = convert_features_to_dataset(evaluate_features)
@@ -249,9 +291,19 @@ if __name__ == "__main__":
     logger.info("{:,} training parameters.".format(total_trainable_params))
 
     # train and evaluate
-    if args.do_train:
-        global_step, tr_loss = train(args, train_dataset, multi_choice_model, evaluate_dataset)
+    if args.do_train == True:
+        global_step, tr_loss = train(args, train_datasets, multi_choice_model, evaluate_dataset)
         logger.info("***** End of training *****")
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
         
-        
+    # only evaluate
+    elif args.do_train == False and args.do_eval == True:
+        if not os.path.exists(args.save_path):
+            os.makedirs(args.save_path)
+        output_eval_file = os.path.join(args.save_path, "eval_results.txt")
+        with open(output_eval_file, "w") as writer:
+            writer.write("***** Eval results per %d training steps *****\n" % args.evaluate_steps)
+        result = evaluate(args, evaluate_dataset, multi_choice_model, output_eval_file)
+    
+    else:
+        pass
