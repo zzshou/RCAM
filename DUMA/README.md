@@ -35,7 +35,7 @@ $ python Train.py -train_data_path='/content/drive/My Drive/SemEval2021-task4/da
           -lr=5e-6 \
           -save_path='/content/drive/My Drive/SemEval2021-task4/model/log/'
 ```
-针对Task1, 我在Colab Pro上将改进的DUMA模型和原论文中的DUMA模型使用相同的参数在训练集上都训练了3轮，每训练400步在验证集上评估结果，并保存验证集上准确率最高的模型的参数。每轮训练时间大概在2小时，上述配置占用显存15GB。最终训练集的准确率达到92%以上，验证集上结果如下：  
+针对Task1, 我在Colab Pro上将改进的DUMA模型和原论文中的DUMA模型使用相同的参数在训练集上都训练了3轮，每训练400步在验证集上评估结果，并保存验证集上准确率最高的模型的参数。每轮训练时间大概在2小时，上述配置占用显存15.5GB。最终训练集的准确率达到92%以上，验证集上结果如下：  
 
 |          training steps          |          改进DUMA          | DUMA |
 |:-----------------------:|:-----:|:-----:|
