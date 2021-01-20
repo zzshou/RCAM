@@ -85,3 +85,4 @@ class MultiHeadAttention(nn.Module):
         q = self.layer_norm(q)
 
         return q, attn
+    
