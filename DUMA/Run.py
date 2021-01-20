@@ -11,6 +11,7 @@ import time
 import logging
 import random
 import numpy as np
+import pandas as pd
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, RandomSampler
@@ -63,8 +64,7 @@ def train(args, train_datasets, model, eval_dataset):
     tr_batches = []
     
     for _, train_dataset in enumerate(train_datasets):
-        train_sampler = RandomSampler(train_dataset)
-        train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=args.batch_size)
+        train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=args.batch_size)
         train_iters.append(InfiniteDataLoader(train_dataloader))
         tr_batches.append(len(train_dataloader))
         
@@ -128,13 +128,15 @@ def train(args, train_datasets, model, eval_dataset):
             task_id = np.argmax(np.random.multinomial(1, sampling_prob))
             batch = train_iters[task_id].get_next()
             batch = tuple(t.to(args.device) for t in batch)
-            loss, logits = model(
+            logits = model(
                                     input_ids = batch[0], 
                                     attention_mask = batch[1],
                                     token_type_ids = batch[2],
                                     lengths = batch[3],
-                                    labels = batch[4],
                                 )
+            labels = batch[4]
+            criterion = nn.CrossEntropyLoss()
+            loss = criterion(logits, labels)
       
             if args.gradient_accumulation_steps > 1:
                 loss = loss / args.gradient_accumulation_steps
@@ -155,12 +157,12 @@ def train(args, train_datasets, model, eval_dataset):
                 epoch_iterator.set_description(description)
             
             logits = logits.detach().cpu().numpy()
-            labels = batch[4].to("cpu").numpy()
+            labels = labels.detach().cpu().numpy()
             tmp_train_accuracy = accuracy(logits, labels)
             train_accuracy += tmp_train_accuracy
             nb_train_examples += batch[0].size(0)
             
-            if args.do_eval:
+            if args.do_eval:    
                 if global_step % args.evaluate_steps == 0:
                     result = evaluate(args, eval_dataset, model, output_eval_file)
                     
@@ -203,18 +205,19 @@ def evaluate(args, eval_dataset, model, output_eval_file):
         model.eval()
         batch = tuple(t.to(args.device) for t in batch)
         with torch.no_grad():
-            loss, logits = model(
+            logits = model(
                                     input_ids = batch[0], 
                                     attention_mask = batch[1],
                                     token_type_ids = batch[2],
                                     lengths = batch[3],
-                                    labels = batch[4],
                                 )
-                                
+            labels = batch[4]
+            criterion = nn.CrossEntropyLoss()
+            loss = criterion(logits, labels)
             eval_loss += loss.item()
     
         logits = logits.detach().cpu().numpy()
-        labels = batch[4].to("cpu").numpy()
+        labels = labels.detach().cpu().numpy()
         tmp_eval_accuracy = accuracy(logits, labels)
         eval_accuracy += tmp_eval_accuracy
         nb_eval_steps += 1
@@ -235,7 +238,36 @@ def evaluate(args, eval_dataset, model, output_eval_file):
     return result
 
 
+def test(args, test_dataset, model):
+    """ test the model """
+    test_dataloader = torch.utils.data.DataLoader(test_dataset, shuffle=False, batch_size=args.batch_size)
+    
+    # Test!
+    logger.info("***** Running test *****")
+    logger.info("  Num examples = %d", len(test_dataset))
+    logger.info("  Batch size = %d", args.batch_size)
 
+    predictions = []
+
+    for batch in tqdm(test_dataloader, desc="Testing"):
+        model.eval()
+        batch = tuple(t.to(args.device) for t in batch)
+        with torch.no_grad():
+            logits = model(
+                                    input_ids = batch[0], 
+                                    attention_mask = batch[1],
+                                    token_type_ids = batch[2],
+                                    lengths = batch[3],
+                                )
+    
+        logits = logits.detach().cpu().numpy()
+        prediction = np.argmax(logits, axis=1)
+        predictions.extend(prediction)
+        
+    # write predictions to csv file.
+    pd.DataFrame({"predictions": predictions}).to_csv(os.path.join(args.save_path, "predictions.csv"), header=0)
+    
+    
 
 if __name__ == "__main__":
 
@@ -258,19 +290,28 @@ if __name__ == "__main__":
     logger.info("  Device = %s", args.device)
         
     # data read and process
-    logger.info("***** Loading training data and evaluating data *****")
     tokenizer = AutoTokenizer.from_pretrained(args.bert_model)
     
-    train_datasets = []
-    for train_data_path in args.train_data_paths:
-        train_examples = read_recam(train_data_path)
-        train_features = convert_examples_to_features(train_examples, tokenizer, max_seq_len=args.max_seq_len)
-        train_dataset = convert_features_to_dataset(train_features)
-        train_datasets.append(train_dataset)
+    if args.train_data_paths:
+        logger.info("***** Loading training data *****")
+        train_datasets = []
+        for train_data_path in args.train_data_paths:
+            train_examples = read_recam(train_data_path, is_labeling=True)
+            train_features = convert_examples_to_features(train_examples, tokenizer, max_seq_len=args.max_seq_len)
+            train_dataset = convert_features_to_dataset(train_features, is_labeling=True)
+            train_datasets.append(train_dataset)
+            
+    if args.dev_data_path:
+        logger.info("***** Loading evaluating data *****")
+        evaluate_examples = read_recam(args.dev_data_path, is_labeling=True)
+        evaluate_features = convert_examples_to_features(evaluate_examples, tokenizer, max_seq_len=args.max_seq_len)
+        evaluate_dataset = convert_features_to_dataset(evaluate_features, is_labeling=True)
         
-    evaluate_examples = read_recam(args.dev_data_path)
-    evaluate_features = convert_examples_to_features(evaluate_examples, tokenizer, max_seq_len=args.max_seq_len)
-    evaluate_dataset = convert_features_to_dataset(evaluate_features)
+    if args.test_data_path:
+        logger.info("***** Loading testing data *****")
+        test_examples = read_recam(args.test_data_path, is_labeling=False)
+        test_features = convert_examples_to_features(test_examples, tokenizer, max_seq_len=args.max_seq_len)
+        test_dataset = convert_features_to_dataset(test_features, is_labeling=False)
     
     # bulid the model
     logger.info("***** Building multi_choice model based on '%s' BERT model *****", args.bert_model)
@@ -291,7 +332,7 @@ if __name__ == "__main__":
     logger.info("{:,} training parameters.".format(total_trainable_params))
 
     # train and evaluate
-    if args.do_train == True:
+    if args.do_train == True and args.do_eval == True:
         global_step, tr_loss = train(args, train_datasets, multi_choice_model, evaluate_dataset)
         logger.info("***** End of training *****")
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
@@ -300,10 +341,17 @@ if __name__ == "__main__":
     elif args.do_train == False and args.do_eval == True:
         if not os.path.exists(args.save_path):
             os.makedirs(args.save_path)
-        output_eval_file = os.path.join(args.save_path, "eval_results.txt")
-        with open(output_eval_file, "w") as writer:
-            writer.write("***** Eval results per %d training steps *****\n" % args.evaluate_steps)
+        output_eval_file = os.path.join(args.save_path, "evaluate_result.txt")
         result = evaluate(args, evaluate_dataset, multi_choice_model, output_eval_file)
+        logger.info("***** End of evaluating *****")
     
     else:
         pass
+    
+    # test
+    if args.do_test == True:
+        if not os.path.exists(args.save_path):
+            os.makedirs(args.save_path)
+        test(args, test_dataset, multi_choice_model)
+        logger.info("***** End of testing *****")
+        
