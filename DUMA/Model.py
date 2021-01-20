@@ -42,7 +42,6 @@ class MultiChoiceModel(nn.Module):
         head_mask=None,       
         inputs_embeds=None,   
         lengths=None,         # 记录每个example的article的长度，做co-attention时用来进行mask
-        labels=None,          # 做分类需要的label
     ):
 
         input_ids = input_ids.view(-1, self.args.max_seq_len) #(batch*n_choice, max_seq_len)
@@ -100,7 +99,5 @@ class MultiChoiceModel(nn.Module):
         # do classification and compute the loss
         logits = self.classifier(fuze) # (batch*n_choice, 1)
         logits = logits.view(-1, self.args.n_choice) # (batch, n_choice)
-        criterion = nn.CrossEntropyLoss()
-        loss = criterion(logits, labels)
         
-        return loss, logits
+        return logits
