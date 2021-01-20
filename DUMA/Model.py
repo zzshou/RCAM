@@ -96,7 +96,7 @@ class MultiChoiceModel(nn.Module):
         # concatenate the two pooled output
         fuze = torch.cat((choice_to_article, article_to_choice), 1) #(batch*n_choice, d_hid*2)
         
-        # do classification and compute the loss
+        # compute the logits
         logits = self.classifier(fuze) # (batch*n_choice, 1)
         logits = logits.view(-1, self.args.n_choice) # (batch, n_choice)
         
