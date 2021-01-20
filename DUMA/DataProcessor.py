@@ -54,7 +54,7 @@ class InputFeatures(object):
         self.label = label
     
     
-def read_recam(path):
+def read_recam(path, is_labeling):
     """
     Parameters
     ----------
@@ -78,7 +78,7 @@ def read_recam(path):
                 choice_2 = line['question'].replace('@placeholder', line['option_2']),
                 choice_3 = line['question'].replace('@placeholder', line['option_3']),
                 choice_4 = line['question'].replace('@placeholder', line['option_4']),
-                label = int(line['label']),
+                label = int(line['label']) if is_labeling else None,
             )
             examples.append(example)
         return examples
@@ -143,19 +143,22 @@ def select_field(features, field):
     return [[choice[field] for choice in feature.choices_features] for feature in features]
 
 
-def convert_features_to_dataset(features):
+def convert_features_to_dataset(features, is_labeling):
     all_input_ids = torch.tensor(select_field(features, "input_ids"), dtype=torch.long)
     all_input_mask = torch.tensor(select_field(features, "input_mask"), dtype=torch.long)
     all_segment_ids = torch.tensor(select_field(features, "segment_ids"), dtype=torch.long)
     all_length = torch.tensor([f.length for f in features], dtype=torch.long)
-    all_label = torch.tensor([f.label for f in features], dtype=torch.long)
-    return TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_length, all_label)
+    if is_labeling:
+        all_label = torch.tensor([f.label for f in features], dtype=torch.long)
+        return TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_length, all_label)
+    else:
+        return TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_length)
 
 
 if __name__ == "__main__":
-    train_examples = read_recam('/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_train.jsonl')
+    train_examples = read_recam('/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_train.jsonl', is_labeling=True)
     tokenizer = AutoTokenizer.from_pretrained('albert-base-v2')
     train_features = convert_examples_to_features(train_examples, tokenizer, max_seq_len=100)
-    train_dataset = convert_features_to_dataset(train_features)
+    train_dataset = convert_features_to_dataset(train_features, is_labeling=True)
     train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=2)
     pass
