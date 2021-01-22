@@ -14,10 +14,10 @@ from wiktionaryparser import WiktionaryParser
 import re
 
 
-###### create the dictionary of the choices ######
+###### create the dictionary of options ######
 
 def get_wiki_definition(parser, word_str):
-    if word_str == 'export':
+    if word_str == 'export': # exoprt是包的bug
         return ''
     word = parser.fetch(word_str)
     ts = []
@@ -62,8 +62,7 @@ def create_dic(data_path, save_path):
     f.close()
     print("save dict successfully.")
 
-
-###### end of create the dictionary of the choices ######
+###### end of create the dictionary of options ######
 
 
 
