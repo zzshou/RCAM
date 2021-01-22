@@ -11,20 +11,20 @@
 最后，co-attention层的输出question-option-aware article representation与article-aware question-option representation仍然是每个token的embedding的形式 (维度是batch_size * num_of_choice, max_seq_len, dim_of_embedding)。我们对其做一维的平均池化 (AvgPool1d)，得到两个维度是 (batch_size * num_of_choice, dim_of_embedding)的向量，包含了汇总的信息 (p.s. 我们通过实验发现AvgPool1d的效果好于MaxPool1d)。然后，我们将两个向量通过concatenation的方式进行融合，得到维度是 (batch_size * num_of_choice, dim_of_embedding * 2)的向量 (p.s. 我们通过实验发现concatenation的效果好于element-wise multiplication, element-wise summation)。最后，我们将该向量输入到一个单层的fully-connected neural network (FNN)，得到article-question-option_i的logit。通过对logits做softmax即可得到每个option的概率，并且计算loss (p.s. 我们通过实验发现，单层的FNN比两层的第一层带激活函数的FNN效果更好)。
 
 ## 2. 模型训练和验证
-可以直接在命令行运行Train.py文件，并快速调节超参数 (每个参数的具体含义请参照Config.py)：
+可以直接在命令行运行Run.py文件，并快速调节超参数 (每个参数的具体含义请参照Config.py)：
 ```
-$ python Train.py -train_data_path='/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_train.jsonl' \
+$ python Run.py -train_data_path '/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_train.jsonl' \
           -dev_data_path='/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_dev.jsonl' \
           -n_choice=5 \
           -max_seq_len=150 \
           -bert_model='albert-xxlarge-v2' \
           -n_layer=1 \
-          -n_head=24 \
+          -n_head=64 \
           -d_k=64 \
           -d_v=64 \
           -dropout=0.1 \
-          -do_train=True \  
-          -do_eval=True \
+          -do_train \
+          -do_eval \
           -evaluate_steps=400 \
           -max_train_steps=-1 \
           -n_epoch=3 \
@@ -33,9 +33,9 @@ $ python Train.py -train_data_path='/content/drive/My Drive/SemEval2021-task4/da
           -max_grad_norm=10.0 \
           -weight_decay=0.01 \
           -lr=5e-6 \
-          -save_path='/content/drive/My Drive/SemEval2021-task4/model/log/'
+          -save_path='/content/drive/My Drive/SemEval2021-task4/model/task_1_train/'
 ```
-针对Task1, 我在Colab Pro上将改进的DUMA模型和原论文中的DUMA模型使用相同的参数在训练集上都训练了3轮，每训练400步在验证集上评估结果，并保存验证集上准确率最高的模型的参数。每轮训练时间大概在2小时，上述配置占用显存15.5GB。最终训练集的准确率达到92%以上，验证集上结果如下：  
+针对Task1, 我在Colab Pro上将改进的DUMA模型和原论文中的DUMA模型使用相同的参数在训练集上都训练了3轮，每训练400步在验证集上评估结果，并保存验证集上准确率最高的模型的参数。每轮训练时间大概在1小时，上述配置占用显存15.5GB。最终训练集的准确率达到92%以上，验证集上结果如下：  
 
 |          training steps          |          改进DUMA          | DUMA |
 |:-----------------------:|:-----:|:-----:|
@@ -55,10 +55,29 @@ $ python Train.py -train_data_path='/content/drive/My Drive/SemEval2021-task4/da
 (p.s. 该超参数的配置并不代表最优，只是一次实验的结果，可以通过继续调节超参数以获得更好的结果。)
 
 
-## 3. 其他参考文献
+## 3. 模型预测
+可以直接在命令行运行Run.py文件:
+
+```
+$ python Run.py -test_data_path='/content/drive/My Drive/SemEval2021-task4/data/test_data/Task_1_test.jsonl' \
+          -n_choice=5 \
+          -max_seq_len=150 \
+          -checkpoint='/content/drive/My Drive/SemEval2021-task4/model/task_1_train/model-2021-01-20.pt' \
+          -bert_model='albert-xxlarge-v2' \
+          -n_layer=1 \
+          -n_head=64 \
+          -d_k=64 \
+          -d_v=64 \
+          -dropout=0.1 \
+          -do_test \
+          -batch_size=2 \
+          -save_path='/content/drive/My Drive/SemEval2021-task4/model/task_1_train/'
+```
+
+## 4. 其他参考文献
 2020年发表的一篇论文[《Multi-task Learning with Multi-head Attention for Multi-choice Reading Comprehension》](https://arxiv.org/pdf/2003.04992.pdf)对阅读理解多选题近期的模型进行了总结，并在DUMA模型的基础上进行了多任务学习 (Multi-task Learning)，即先在DREAM和RACE数据集上进行粗略的学习，再在DREAM数据集上进一步学习，取得了DREAM排行榜上SOTA的效果。
 
 我采用了该方法进行了尝试，即先在TASK_1和TASK_2的训练集进行粗略的学习(training epoch=1)，再在TASK_1的训练集进一步学习，最后在TASK_1的验证集上进行评估，效果不升反降 (基于albert_base_v2，albert_xxlarge_v2还没有尝试)。此外，直接在TASK_1和TASK_2的训练集进行细致的学习 (加大training epoch)，在TASK_1的验证集上进行评估，效果不升反降 (基于albert_base_v2，albert_xxlarge_v2还没有尝试)。
 
-## 4. 一些思考
+## 5. 一些思考
 感觉可以在DUMA模型的思路上进行改进，来更好地适应抽象阅读理解的任务。比如借助CNN来提取句子的summary信息？灵感来自于这篇attention与CNN结合的论文[《ABCNN: Attention-Based Convolutional Neural Networkfor Modeling Sentence Pairs》](https://arxiv.org/pdf/1512.05193.pdf)。 或许可以设计出其他更好的模型，在多个阅读理解多选题任务上得到提升。

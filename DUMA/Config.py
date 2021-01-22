@@ -17,8 +17,9 @@ def arg_conf():
     parser.add_argument('-random_seed', type=int, default=2021, help='set the random seed so that we can reporduce the result.')
     
     # parameters of data processor
-    parser.add_argument('-train_data_paths', nargs='+', help='data paths of multi train datasets.')
+    parser.add_argument('-train_data_paths', nargs='+', default=None, help='data paths of multi train datasets.')
     parser.add_argument('-dev_data_path', default=None, help='data path of eval dataset.')
+    parser.add_argument('-test_data_path', default=None, help='data path of test dataset.')
     parser.add_argument('-n_choice', type=int, default=5, help='number of choices.')
     parser.add_argument('-max_seq_len', type=int, default=100, help='max sequence length of article + question.')
     
@@ -33,8 +34,9 @@ def arg_conf():
     parser.add_argument('-dropout', type=float, default=0.1, help='dropout in co-attention') 
  
     # parameters of training
-    parser.add_argument('-do_train', type=bool, default=True, help='if training')
-    parser.add_argument('-do_eval', type=bool, default=True, help='if evaluating')
+    parser.add_argument('-do_train', action='store_true', help='if training, default False')
+    parser.add_argument('-do_eval', action='store_true', help='if evaluating, default False')
+    parser.add_argument('-do_test', action='store_true', help='if testing, default False')
     parser.add_argument('-evaluate_steps', type=int, default=400, help='evaluate on the dev set at every xxx evaluate_steps.')
     parser.add_argument('-max_train_steps', type=int, default=-1, help='If > 0: set total number of training steps to perform. Override num_train_epochs.')
     parser.add_argument('-n_epoch', type=int, default=3, help='number of training epochs')

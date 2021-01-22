@@ -14,6 +14,58 @@ from wiktionaryparser import WiktionaryParser
 import re
 
 
+###### create the dictionary of options ######
+
+def get_wiki_definition(parser, word_str):
+    if word_str == 'export': # exoprt是包的bug
+        return ''
+    word = parser.fetch(word_str)
+    ts = []
+    for item in word:
+        for definition in item['definitions']:
+            text = definition['text']
+            for t in text:
+                t = re.sub('\(((?!\)).)*\)|\[((?!\]).)*\]', ';', t).strip()
+                t = re.sub('^([;\s]+)|([;\s]+)$', '', t).strip()
+                t = re.sub(';\.', '.', t).strip()
+                if (not word_str == 'as') and (('plural of' in t) or ('Third-person singular simple present indicative form of' in t)):
+                  return get_wiki_definition(parser, t.split(' ')[-1])
+                elif (not t == word_str) and ('present participle' not in t) and ('past tense' not in t) and ('past participle' not in t):
+                  ts.append(t)
+    ts = ' '.join(ts[:3]) #只返回前三个definition
+    return ts
+    
+    
+def create_dic(data_path, save_path):
+    with open(data_path, mode='r', encoding="utf8") as f:
+        reader = jsonlines.Reader(f)
+        options = []
+        for line in reader:
+            options.append(line['option_0'])
+            options.append(line['option_1'])    
+            options.append(line['option_2'])
+            options.append(line['option_3'])
+            options.append(line['option_4'])
+        
+    options = list(set(options)) #先去重
+    options.sort() #按照单词首字母排序
+        
+    dic = {}
+    for _, option in tqdm(enumerate(options)):
+        definition = get_wiki_definition(parser, option)
+        print(definition)
+        dic[option] = definition
+            
+    # save the dic to txt file.
+    f = open(save_path, mode='w', encoding="utf8")
+    f.write(str(dic))
+    f.close()
+    print("save dict successfully.")
+
+###### end of create the dictionary of options ######
+
+
+
 class SemEvalExample(object):
     def __init__(self, article, choice_0, choice_1, choice_2, choice_3, choice_4, label=None):
         self.article = article
@@ -55,7 +107,16 @@ class InputFeatures(object):
         self.label = label
 
 
-def read_recam(path, is_labeling, add_wiki=False):
+def generate_choice(parser, option, question, add_wiki, dic):
+    length = len(question.split(" "))
+    if add_wiki:
+        choice = question.replace('@placeholder', option) + ' ' + " ".join(dic[option].split(" ")[:length]) if len(dic[option]) > 0 else question.replace('@placeholder', option)
+    else:
+        choice = question.replace('@placeholder', option)
+    return choice
+    
+    
+def read_recam(path, is_labeling, add_wiki=False, dic=None):
     """
     Parameters
     ----------
@@ -75,11 +136,11 @@ def read_recam(path, is_labeling, add_wiki=False):
         for line in reader:
             example = SemEvalExample(
                 article=line['article'],
-                choice_0=generate_choice(parser, line['option_0'], line['question'], add_wiki),
-                choice_1=generate_choice(parser, line['option_1'], line['question'], add_wiki),
-                choice_2=generate_choice(parser, line['option_2'], line['question'], add_wiki),
-                choice_3=generate_choice(parser, line['option_3'], line['question'], add_wiki),
-                choice_4=generate_choice(parser, line['option_4'], line['question'], add_wiki),
+                choice_0=generate_choice(parser, line['option_0'], line['question'], add_wiki, dic),
+                choice_1=generate_choice(parser, line['option_1'], line['question'], add_wiki, dic),
+                choice_2=generate_choice(parser, line['option_2'], line['question'], add_wiki, dic),
+                choice_3=generate_choice(parser, line['option_3'], line['question'], add_wiki, dic),
+                choice_4=generate_choice(parser, line['option_4'], line['question'], add_wiki, dic),
                 label = int(line['label']) if is_labeling else None,
             )
             examples.append(example)
@@ -157,55 +218,19 @@ def convert_features_to_dataset(features, is_labeling):
         return TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_length)
 
 
-def generate_choice(parser, option, question, add_wiki):
-    choice = question.replace('@placeholder', option)
-    if add_wiki:
-        syns, ts = get_wiki_definition(parser, option)
-        if syns:
-            ts = syns + " " + ts
-            choice_length = len(choice)
-            text = ts[:min(len(ts), choice_length)]
-            choice = choice + ' ' + text
-        else:
-            choice_length = len(choice)
-            text = ts[:min(len(ts), choice_length)]
-            choice = choice + ' ' + text
-    print(choice)
-    return choice
+def read_dic(dic_path):
+    f = open(dic_path, mode='r', encoding="utf8")
+    dic = eval(f.read())
+    f.close()
+    return dic
 
-
-def get_wiki_definition(parser, word_str):
-    word = parser.fetch(word_str)
-    syns = []
-    ts = []
-    for item in word:
-        for definition in item['definitions']:
-            relatedWords = definition['relatedWords']
-            for word in relatedWords:
-                if word['relationshipType'] == 'synonyms':
-                    syn = ' '.join(
-                        [re.sub('\(.*\):+|see Thesaurus:|and Thesaurus:|See also Thesaurus:|see also Thesaurus:', '',
-                                item).strip() for item
-                         in word['words']])
-                    syns.append(syn)
-            text = definition['text']
-            for t in text:
-                t = re.sub('\(((?!\)).)*\)|\[((?!\]).)*\]', ';', t).strip()
-                t = re.sub('^([;\s]+)|([;\s]+)$', '', t).strip()
-                t = re.sub(';\.', '.', t).strip()
-                if not t == word_str:
-                    ts.append(t)
-    syns = ';'.join(syns)
-    ts = ' '.join(ts)
-    return syns, ts
 
 
 if __name__ == "__main__":
-    # train_examples = read_recam('/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_train.jsonl', is_labeling=True, add_wiki=True)
-    # tokenizer = AutoTokenizer.from_pretrained('albert-base-v2')
-    # train_features = convert_examples_to_features(train_examples, tokenizer, max_seq_len=100)
-    # train_dataset = convert_features_to_dataset(train_features, is_labeling=True)
-    # train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=2)
-    # pass
-    read_recam('/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_train.jsonl', is_labeling=True, add_wiki=True)
-    
+    dic = read_dic("/content/drive/My Drive/SemEval2021-task4/data/training_data/task_1_train_dic.txt")
+    train_examples = read_recam('/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_train.jsonl', is_labeling=True, add_wiki=True, dic=dic)
+    tokenizer = AutoTokenizer.from_pretrained('albert-base-v2')
+    train_features = convert_examples_to_features(train_examples, tokenizer, max_seq_len=100)
+    train_dataset = convert_features_to_dataset(train_features, is_labeling=True)
+    train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=2)
+    pass
