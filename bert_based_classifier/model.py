@@ -13,6 +13,7 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from collections import OrderedDict
 import re
 import os.path as path
+from bert_based_classifier.CoAttention import MultiHeadAttention
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +45,14 @@ class RCAMModel(Model):
             dropout: float = None,
             num_choices: int = 5,
             mode: str = 'rnn',
+            rnn_dim: int = 768,
+            attention_n_head: int = 24,
+            attention_d_k: int = 64,
+            attention_d_v: int = 64,
+            attention_dropout: float = 0.3,
+            rnn_bidirection: bool = False,
+            rnn_layer: int = 2,
+            window_slice: bool = False,
             initializer: InitializerApplicator = InitializerApplicator()) -> None:
         super().__init__(vocab)
         self.pretrain = pretrained_model_type
@@ -52,9 +61,6 @@ class RCAMModel(Model):
             self.embedding = BertModel.from_pretrained(pretrained_model_path)
         elif pretrained_model_type == 'albert':
             self.embedding = AlbertModel.from_pretrained(pretrained_model_path)
-        elif pretrained_model_type == 'albertxxlarge':
-            config = BertConfig.from_json_file(path.join(pretrained_model_path, 'config.json'))
-            self.embedding = AlbertModel.from_pretrained(pretrained_model_path, from_tf=True, config=config)
         elif pretrained_model_type == 'robert':
             self.embedding = RobertaModel.from_pretrained(pretrained_model_path)
         elif pretrained_model_type == 'fine-tune':
@@ -77,8 +83,8 @@ class RCAMModel(Model):
         self.scorer = Metric()
         if mode == 'rnn':
             self.encoder_mode = mode
-            self.encoder = nn.LSTM(input_size=768,
-                                   hidden_size=768,
+            self.encoder = nn.LSTM(input_size=self.embedding_dim,
+                                   hidden_size=rnn_dim,
                                    num_layers=2,
                                    batch_first=True,
                                    dropout=0.33,
@@ -89,8 +95,35 @@ class RCAMModel(Model):
         elif mode == 'bert':
             self.encoder_mode = mode
             self.encoder = RobertaModel.from_pretrained(pretrained_model_path)
-        if mode == 'rnn':
-            self._linear_layer = nn.Linear(in_features=embedding_dim * 2, out_features=1)
+        elif mode == 'attention':
+            self.encoder_mode = mode
+            self.encoder = MultiHeadAttention(n_head=attention_n_head,
+                                              d_model=embedding_dim,
+                                              d_k=attention_d_k,
+                                              d_v=attention_d_v,
+                                              dropout=attention_dropout)
+            # self.rnn = nn.LSTM(input_size=self.embedding_dim,
+            #                    hidden_size=rnn_dim,
+            #                    num_layers=rnn_layer,
+            #                    batch_first=True,
+            #                    dropout=0.33,
+            #                    bidirectional=False)
+        if mode in ('rnn'):
+            if not window_slice:
+                # self.article_score_layer = nn.Linear(in_features=rnn_dim, out_features=1)
+                # self.option_score_layer = nn.Linear(in_features=rnn_dim, out_features=1)
+                # self.score_layer = nn.Linear(in_features=rnn_dim, out_features=1)
+                # self._linear_layer = nn.Linear(in_features=rnn_dim, out_features=1)
+                # self.softmax_layer = nn.Softmax(dim=1)
+                # self._linear_layer = nn.Linear(
+                #     in_features=rnn_dim * rnn_layer * 2 if rnn_bidirection else rnn_dim * rnn_layer, out_features=1)
+                self.lm = BertModel.from_pretrained('/home/data/zshou/corpus/cased_L-12_H-768_A-12')
+                self._linear_layer = nn.Linear(in_features=embedding_dim, out_features=1)
+            else:
+                self._linear_layer = nn.Linear(in_features=rnn_dim * 2, out_features=1)
+        elif mode in ('attention') and not window_slice:
+            self.lm = BertModel.from_pretrained('/home/data/zshou/corpus/cased_L-12_H-768_A-12')
+            self._linear_layer = nn.Linear(in_features=embedding_dim, out_features=1)
         else:
             self._linear_layer = nn.Linear(in_features=embedding_dim, out_features=1)
 
@@ -115,6 +148,41 @@ class RCAMModel(Model):
                 token_type_ids=type_ids.view(-1, tokens.size(-1)),
             )
             encode_output = outputs[1]
+            batch_size = tokens.size()[0]
+            if self.encoder_mode == 'attention':
+                embed_text = outputs[0]
+                type_mask = type_ids.view(batch_size * 5, -1)
+                # logger.info(embed_text.shape)
+                # logger.info(type_mask.shape)
+                # logger.info(type_mask.ge(1).squeeze(0).unsqueeze(-1).expand(embed_text.shape).shape)
+                option_output = embed_text * (type_mask.ge(1).squeeze(0).unsqueeze(-1).expand(embed_text.shape)) * ()
+                article_output = embed_text * (type_mask.eq(0).squeeze(0).unsqueeze(-1).expand(embed_text.shape))
+                option_output, _ = self.encoder(q=option_output, k=article_output, v=article_output)
+                article_output, _ = self.encoder(q=article_output, k=option_output, v=option_output)
+
+                # encode_output, (h, c) = self.rnn(torch.cat((article_output, option_output), 1))
+                encode_output = torch.cat((article_output, option_output), 1)
+                '''
+                # option_score = self.option_score_layer(option_output)
+                # article_score = self.article_score_layer(article_output)
+                encode_output_score = self.score_layer(encode_output)
+                # option_score = self.softmax_layer(option_score)
+                # article_score = self.softmax_layer(article_score)
+                encode_output_score = self.softmax_layer(encode_output_score)
+                # logger.info(score)
+                # article_output = torch.sum(article_output * article_score, 1)
+                # option_output = torch.sum(option_output * option_score, 1)
+                # encode_output = torch.cat((article_output, option_output), dim=1)
+                encode_output = torch.sum(encode_output_score * encode_output, 1)
+                '''
+                # encode_output = self.lm(
+                #     inputs_embeds=encode_output,
+                #     attention_mask=mask.view(-1, tokens.size(-1)),
+                #     token_type_ids=type_ids.view(-1, tokens.size(-1)),
+                # )
+                # encode_output = encode_output[1]
+                encode_output, _ = torch.max(encode_output, dim=1)
+
         else:
             tokens = paragraph_with_question_field['bert_tokens']['token_ids']
             batch_size = tokens.size()[0]
@@ -131,20 +199,29 @@ class RCAMModel(Model):
                 encode_output = torch.squeeze(encode_output, 1)
             elif self.encoder_mode == 'rnn':
                 embedded_text = embedded_text.view(batch_size * 5, window_length, self.embedding_dim)
-                # logger.info(embedded_text.shape)
                 encode_output, _ = self.encoder(embedded_text)
-                # logger.info(encode_output.shape)
                 encode_output = torch.mean(encode_output, 1)
                 encode_output = torch.squeeze(encode_output, 1)
-            elif self.encoder_mode == 'bert':
-                pass
-
+            elif self.encoder_mode == 'attention':
+                choice_output = outputs[0]
+                type_ids = type_ids.view(batch_size * window_length * 5, -1)
+                choice_output = choice_output * (type_ids.ge(1).squeeze(0).unsqueeze(-1).expand(choice_output.shape))
+                # logger.info(choice_output.shape)
+                embedded_text = embedded_text.unsqueeze(1)
+                # logger.info(embedded_text.shape)
+                encode_output, _ = self.encoder(q=embedded_text, k=choice_output, v=choice_output)
+                # encode_output, _ = self.encoder(q=choice_output, k=embedded_text, v=embedded_text)
+                encode_output = encode_output.view(batch_size * 5, window_length, self.embedding_dim)
+                # encode_output, _ = self.rnn(encode_output)
+                encode_output, _ = torch.max(encode_output, dim=1, keepdim=True)
+                encode_output = encode_output.squeeze(1)
         if self.training:
             if self._dropout:
                 encode_output = self._dropout(encode_output)
             logits = self._linear_layer(encode_output)  # batch* num_choices, num_labels
             reshaped_logits = logits.view(-1, self._num_choices)  # batch, num_choices
-
+            # logger.info(reshaped_logits)
+            # logger.info(label)
             _loss = self.scorer.update(reshaped_logits, label)
             return {  # "reshape_logits": reshaped_logits,
                 "predicted_label": torch.argmax(reshaped_logits, dim=-1),

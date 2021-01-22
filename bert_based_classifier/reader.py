@@ -69,7 +69,6 @@ class RCAMDatasetReader(DatasetReader):
                     combine_token.append(paragraph_with_question)
             paragraph_with_question_field = ListField(
                 [TextField(combine, self._token_indexers) for combine in combine_token])
-
             fields['paragraph_with_question_field'] = paragraph_with_question_field
             if label_list is not None:
                 label_field = ListField([LabelField(label) for label in label_list])
@@ -90,8 +89,8 @@ class RCAMDatasetReader(DatasetReader):
 
             article_with_question_field = ListField(
                 [TextField(combine, self._token_indexers) for combine in combine_token])
-
             fields['article_with_question'] = article_with_question_field
+
             if label_list is not None:
                 label_field = ListField([LabelField(label) for label in label_list])
                 fields['label'] = label_field

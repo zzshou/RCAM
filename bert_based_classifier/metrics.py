@@ -10,13 +10,12 @@ class Metric:
         self.entroy = torch.nn.CrossEntropyLoss()
 
     def update(self, logits, label):  # loss= max(1+s_i-s_c,0)
-        device = logits.device
         batch = logits.size(0)
         self.num_sample += batch
         correct_index = torch.argmax(label, dim=1)
-        score_correct = torch.gather(logits, dim=1, index=correct_index.unsqueeze(1)).squeeze()
-        mask = (label == 0)
-        false_logits = torch.masked_select(logits, mask).view(logits.size(0), -1)
+        # score_correct = torch.gather(logits, dim=1, index=correct_index.unsqueeze(1)).squeeze()
+        # mask = (label == 0)
+        # false_logits = torch.masked_select(logits, mask).view(logits.size(0), -1)
         # score_max_false = torch.max(false_logits, dim=1).values
         # loss = 1 + score_max_false - score_correct
         # loss = torch.max(loss, torch.zeros([1, batch]).to(device))
