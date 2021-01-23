@@ -20,6 +20,8 @@ class MultiChoiceModel(nn.Module):
             param.requires_grad = is_requires_grad  # 对bert层的每个参数都要求梯度
         self.d_hid = model.config.hidden_size
         self.args = args
+        if args.n_last_layer > 1:
+            self.W = nn.Linear(args.n_last_layer, 1, bias=False)
         self.dropout = nn.Dropout(0.1)
         self.layer_norm = nn.LayerNorm(self.d_hid, eps=1e-6)
         self.layer_stack = nn.ModuleList([
@@ -57,8 +59,17 @@ class MultiChoiceModel(nn.Module):
             head_mask=head_mask,
             inputs_embeds=inputs_embeds,
         )
-
+        
         sequence_output = outputs[0] #(batch*n_choice, max_seq_len, d_hid)
+        
+        # 将ALBERT的每层的输出weighted sum
+        layers_ouput = outputs[2 : self.args.n_last_layer+1]
+        if layers_ouput:
+            sequence_output = sequence_output.unsqueeze(-1) #(batch*n_choice, max_seq_len, d_hid, 1)
+            for layer_output in layers_ouput:
+                sequence_output = torch.cat((sequence_output, layer_output.unsqueeze(-1)), -1) #(batch*n_choice, max_seq_len, d_hid, n_last_layer)
+            sequence_output = self.W(sequence_output).squeeze(-1) #(batch*n_choice, max_seq_len, d_hid)
+        
         sequence_output = self.dropout(sequence_output)
         sequence_output = self.layer_norm(sequence_output)
         
@@ -96,7 +107,7 @@ class MultiChoiceModel(nn.Module):
         # concatenate the two pooled output
         fuze = torch.cat((choice_to_article, article_to_choice), 1) #(batch*n_choice, d_hid*2)
         
-        # compute the logits
+        # do classification and compute the loss
         logits = self.classifier(fuze) # (batch*n_choice, 1)
         logits = logits.view(-1, self.args.n_choice) # (batch, n_choice)
         
