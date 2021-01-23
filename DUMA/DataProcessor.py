@@ -201,11 +201,10 @@ def get_wiki_definition(parser, word_str):
 
 
 if __name__ == "__main__":
-    # train_examples = read_recam('/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_train.jsonl', is_labeling=True, add_wiki=True)
-    # tokenizer = AutoTokenizer.from_pretrained('albert-base-v2')
-    # train_features = convert_examples_to_features(train_examples, tokenizer, max_seq_len=100)
-    # train_dataset = convert_features_to_dataset(train_features, is_labeling=True)
-    # train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=2)
-    # pass
-    read_recam('/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_train.jsonl', is_labeling=True, add_wiki=True)
+    train_examples = read_recam('/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_train.jsonl', is_labeling=True, add_wiki=True)
+    tokenizer = AutoTokenizer.from_pretrained('albert-base-v2')
+    train_features = convert_examples_to_features(train_examples, tokenizer, max_seq_len=100)
+    train_dataset = convert_features_to_dataset(train_features, is_labeling=True)
+    train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=2)
+    pass
     
