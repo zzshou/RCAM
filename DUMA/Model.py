@@ -58,12 +58,13 @@ class MultiChoiceModel(nn.Module):
             position_ids=position_ids,
             head_mask=head_mask,
             inputs_embeds=inputs_embeds,
+            output_hidden_states=True,
         )
         
         sequence_output = outputs[0] #(batch*n_choice, max_seq_len, d_hid)
         
         # 将ALBERT的每层的输出weighted sum
-        layers_ouput = outputs[2 : self.args.n_last_layer+1]
+        layers_ouput = outputs[2][-self.args.n_last_layer : -1][::-1]
         if layers_ouput:
             sequence_output = sequence_output.unsqueeze(-1) #(batch*n_choice, max_seq_len, d_hid, 1)
             for layer_output in layers_ouput:
