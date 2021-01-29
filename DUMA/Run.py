@@ -31,7 +31,7 @@ def seed_torch(seed=2021):
     os.environ['PYTHONHASHSEED'] = str(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
-    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
     torch.backends.cudnn.deterministic = True
 
 
@@ -163,7 +163,7 @@ def train(args, train_datasets, model, eval_dataset):
             nb_train_examples += batch[0].size(0)
             
             if args.do_eval:    
-                if global_step % args.evaluate_steps == 0:
+                if global_step != 0 and global_step % args.evaluate_steps == 0:
                     result = evaluate(args, eval_dataset, model, output_eval_file)
                     
                     # save the model having the best accuracy on dev dataset.
