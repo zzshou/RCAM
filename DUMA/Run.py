@@ -145,6 +145,7 @@ def train(args, train_datasets, model, eval_dataset):
             nn.utils.clip_grad_norm_(model.parameters(), max_norm=args.max_grad_norm)
 
             tr_loss += loss.item()
+            old_global_step = global_step
             if (step + 1) % args.gradient_accumulation_steps == 0:
                 optimizer.step()
                 scheduler.step()  # Update learning rate schedule
@@ -163,7 +164,7 @@ def train(args, train_datasets, model, eval_dataset):
             nb_train_examples += batch[0].size(0)
             
             if args.do_eval:    
-                if global_step != 0 and global_step % args.evaluate_steps == 0:
+                if global_step != old_global_step and global_step % args.evaluate_steps == 0:
                     result = evaluate(args, eval_dataset, model, output_eval_file)
                     
                     # save the model having the best accuracy on dev dataset.
