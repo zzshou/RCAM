@@ -2,7 +2,7 @@
 """
 Created on Sun Jan 10 17:54:58 2021
 
-@author: 31906
+@author: JIANG Yuxin
 """
 
 
@@ -17,7 +17,7 @@ class MultiChoiceModel(nn.Module):
         super(MultiChoiceModel, self).__init__()
         self.model = model #bert encoder
         for param in self.model.parameters():
-            param.requires_grad = is_requires_grad  # 对bert层的每个参数都要求梯度
+            param.requires_grad = is_requires_grad
         self.d_hid = model.config.hidden_size
         self.args = args
         if args.n_last_layer > 1:
@@ -37,20 +37,20 @@ class MultiChoiceModel(nn.Module):
 
     def forward(
         self,
-        input_ids=None,  #输入的id, bert encoder把id转成embedding
-        attention_mask=None,   #attention里的mask
-        token_type_ids=None,    # [CLS]A[SEP]B[SEP]
-        position_ids=None,     # 位置id
+        input_ids=None,  
+        attention_mask=None,   
+        token_type_ids=None,   
+        position_ids=None, 
         head_mask=None,       
         inputs_embeds=None,   
-        lengths=None,         # 记录每个example的article的长度，做co-attention时用来进行mask
+        lengths=None,  #used in mask of co-attention layer
     ):
 
         input_ids = input_ids.view(-1, self.args.max_seq_len) #(batch*n_choice, max_seq_len)
         attention_mask = attention_mask.view(-1, self.args.max_seq_len) #(batch*n_choice, max_seq_len)
         token_type_ids = token_type_ids.view(-1, self.args.max_seq_len) #(batch*n_choice, max_seq_len)
 
-        # 输入bert进行encode，得到每个token的embedding
+        # acquire token embeddings
         outputs = self.model(
             input_ids,
             attention_mask=attention_mask,
@@ -63,7 +63,7 @@ class MultiChoiceModel(nn.Module):
         
         sequence_output = outputs[0] #(batch*n_choice, max_seq_len, d_hid)
         
-        # 将ALBERT的每层的输出weighted sum
+        # weighted sum of the transformer encoder layers
         layers_ouput = outputs[2][-self.args.n_last_layer : -1][::-1]
         if layers_ouput:
             sequence_output = sequence_output.unsqueeze(-1) #(batch*n_choice, max_seq_len, d_hid, 1)
@@ -75,13 +75,13 @@ class MultiChoiceModel(nn.Module):
         sequence_output = self.layer_norm(sequence_output)
         
         lengths = lengths.detach().cpu().numpy()
-        max_a_len = max(lengths) #article的最大长度
-        max_c_len = self.args.max_seq_len-min(lengths)-2 #choice的最大长度
-        article_output = sequence_output[:, :max_a_len, :] #根据article的最大长度取出article_output
-        choice_output = sequence_output[:, -(max_c_len+1):-1, :] #根据choice的最大长度取出choice_output
+        max_a_len = max(lengths) #max length of articles
+        max_c_len = self.args.max_seq_len-min(lengths)-2 #max length of choices(question + answer)
+        article_output = sequence_output[:, :max_a_len, :]
+        choice_output = sequence_output[:, -(max_c_len+1):-1, :]
         
         def create_mask(lengths, n_choice):
-            """ 根据每个example的article的长度生成attention mask """
+            """ generate attention mask according to the article length of each example """
             mask = []
             for i in lengths:
                 a = np.zeros((max_c_len, max_a_len))
@@ -93,7 +93,7 @@ class MultiChoiceModel(nn.Module):
         a_to_c_mask = create_mask(lengths, n_choice=self.args.n_choice).to(self.args.device) #(batch*n_choice, max_c_len, max_a_len)
         c_to_a_mask = a_to_c_mask.permute(0, 2, 1) #(batch*n_choice, max_a_len， max_c_len)
         
-        # 对article和choice做co-attention
+        # co-attention
         for co_attention_layer in self.layer_stack: 
             choice_output, _ = co_attention_layer(q=choice_output, k=article_output, v=article_output, mask=a_to_c_mask)
             article_output, _ = co_attention_layer(q=article_output, k=choice_output, v=choice_output, mask=c_to_a_mask)
@@ -108,7 +108,7 @@ class MultiChoiceModel(nn.Module):
         # concatenate the two pooled output
         fuze = torch.cat((choice_to_article, article_to_choice), 1) #(batch*n_choice, d_hid*2)
         
-        # do classification and compute the loss
+        # compute the logits
         logits = self.classifier(fuze) # (batch*n_choice, 1)
         logits = logits.view(-1, self.args.n_choice) # (batch, n_choice)
         
