@@ -2,7 +2,7 @@
 """
 Created on Sun Jan 10 17:21:22 2021
 
-@author: 31906
+@author: JIANG Yuxin
 """
 
 import jsonlines
@@ -56,18 +56,6 @@ class InputFeatures(object):
 
 
 def read_recam(path, is_labeling, add_wiki=False):
-    """
-    Parameters
-    ----------
-    path : str
-        data path.
-        
-    Returns
-    -------
-    examples : list
-        list of object.
-
-    """
     parser = WiktionaryParser()
     with open(path, mode='r', encoding="utf8") as f:
         reader = jsonlines.Reader(f)
