@@ -2,7 +2,7 @@
 """
 Created on Mon Jan 11 12:59:19 2021
 
-@author: 31906
+@author: JIANG Yuxin
 """
 
 
@@ -57,7 +57,7 @@ class InfiniteDataLoader:
         return data
     
     
-def train(args, train_datasets, model, eval_dataset):
+def train(args, train_datasets, model, optimizer, eval_dataset):
     """ train the model """
     
     train_iters = []
@@ -68,7 +68,7 @@ def train(args, train_datasets, model, eval_dataset):
         train_iters.append(InfiniteDataLoader(train_dataloader))
         tr_batches.append(len(train_dataloader))
         
-    ## set sampling proportion
+    ## set sampling proportion for multi-task learning
     total_n_tr_batches = sum(tr_batches)
     sampling_prob = [float(n_batches) / total_n_tr_batches for n_batches in tr_batches]
     
@@ -78,18 +78,6 @@ def train(args, train_datasets, model, eval_dataset):
     else:
         total_steps = total_n_tr_batches // args.gradient_accumulation_steps * args.n_epoch
   
-    no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
-    optimizer_grouped_parameters = [
-            {
-                    'params':[p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)],
-                    'weight_decay': args.weight_decay
-            },
-            {
-                    'params':[p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)],
-                    'weight_decay':0.0
-            }
-    ]
-    optimizer = AdamW(optimizer_grouped_parameters, lr=args.lr)
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=total_steps // 10, num_training_steps=total_steps)
 
     # Train!
@@ -171,8 +159,11 @@ def train(args, train_datasets, model, eval_dataset):
                     if result['eval_accuracy'] > best_eval_accuracy:
                         best_eval_accuracy = result['eval_accuracy']
                         now_time = time.strftime('%Y-%m-%d',time.localtime(time.time()))
-                        torch.save({"model": multi_choice_model.state_dict(), 
-                                    "name": args.bert_model},
+                        torch.save({"model": model.state_dict(), 
+                                    "name": args.bert_model, 
+                                    "optimizer": optimizer.state_dict(), 
+                                    "epoch": epoch,
+                                    },
                                     os.path.join(args.save_path, "model-" + now_time + ".pt"))
                         logger.info("***** Better eval accuracy, save model successfully *****")
                         
@@ -314,27 +305,43 @@ if __name__ == "__main__":
         test_features = convert_examples_to_features(test_examples, tokenizer, max_seq_len=args.max_seq_len)
         test_dataset = convert_features_to_dataset(test_features, is_labeling=False)
     
-    # bulid the model
+    # bulid the model 
     logger.info("***** Building multi_choice model based on '%s' BERT model *****", args.bert_model)
     bert_model = AutoModel.from_pretrained(args.bert_model)
     multi_choice_model = MultiChoiceModel(bert_model, args, is_requires_grad=True).to(args.device)
-    if args.checkpoint:
-        checkpoint = torch.load(args.checkpoint)
-        if checkpoint["name"] == args.bert_model:
-            logger.info("***** Loading saved model based on '%s' *****", checkpoint["name"])
-            multi_choice_model.load_state_dict(checkpoint["model"])
-        else:
-            raise Exception("The loaded model does not match the pre-trained model", checkpoint["name"])
-            
     # print the number of parameters of the model
     total_params = sum(p.numel() for p in multi_choice_model.parameters())
     logger.info("{:,} total parameters.".format(total_params))
     total_trainable_params = sum(p.numel() for p in multi_choice_model.parameters() if p.requires_grad)
     logger.info("{:,} training parameters.".format(total_trainable_params))
-
+    
+    # bulid the optimizer
+    no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
+    optimizer_grouped_parameters = [
+            {
+                    'params':[p for n, p in multi_choice_model.named_parameters() if not any(nd in n for nd in no_decay)],
+                    'weight_decay': args.weight_decay
+            },
+            {
+                    'params':[p for n, p in multi_choice_model.named_parameters() if any(nd in n for nd in no_decay)],
+                    'weight_decay':0.0
+            }
+    ]
+    optimizer = AdamW(optimizer_grouped_parameters, lr=args.lr)
+    
+    # load trained model from checkpoint
+    if args.checkpoint:
+        checkpoint = torch.load(args.checkpoint)
+        if checkpoint["name"] == args.bert_model:
+            logger.info("***** Loading saved model based on '%s' *****", checkpoint["name"])
+            multi_choice_model.load_state_dict(checkpoint["model"])
+            optimizer.load_state_dict(checkpoint["optimizer"])
+        else:
+            raise Exception("The loaded model does not match the pre-trained model", checkpoint["name"])
+            
     # train and evaluate
     if args.do_train == True and args.do_eval == True:
-        global_step, tr_loss = train(args, train_datasets, multi_choice_model, evaluate_dataset)
+        global_step, tr_loss = train(args, train_datasets, multi_choice_model, optimizer, evaluate_dataset)
         logger.info("***** End of training *****")
         logger.info(" global_step = %s, average loss = %s", global_step, tr_loss)
         
