@@ -33,7 +33,7 @@ $ python Run.py -train_data_path '/content/drive/My Drive/SemEval2021-task4/data
           -max_grad_norm=10.0 \
           -weight_decay=0.01 \
           -lr=5e-6 \
-          -save_path='/content/drive/My Drive/SemEval2021-task4/model/task_1_train/'
+          -save_path='/content/drive/My Drive/SemEval2021-task4/log/task_1_train/'
 ```
 针对Task1, 我在Colab Pro上将改进的DUMA模型和原论文中的DUMA模型使用相同的参数在训练集上都训练了3轮，每训练400步在验证集上评估结果，并保存验证集上准确率最高的模型的参数。每轮训练时间大概在1小时，上述配置占用显存15.5GB。最终训练集的准确率达到92%以上，验证集上结果如下：  
 
@@ -62,7 +62,7 @@ $ python Run.py -train_data_path '/content/drive/My Drive/SemEval2021-task4/data
 $ python Run.py -test_data_path='/content/drive/My Drive/SemEval2021-task4/data/test_data/Task_1_test.jsonl' \
           -n_choice=5 \
           -max_seq_len=150 \
-          -checkpoint='/content/drive/My Drive/SemEval2021-task4/model/task_1_train/model-2021-01-20.pt' \
+          -checkpoint='/content/drive/My Drive/SemEval2021-task4/log/task_1_train/model-2021-01-20.pt' \
           -bert_model='albert-xxlarge-v2' \
           -n_layer=1 \
           -n_head=64 \
@@ -71,7 +71,7 @@ $ python Run.py -test_data_path='/content/drive/My Drive/SemEval2021-task4/data/
           -dropout=0.1 \
           -do_test \
           -batch_size=2 \
-          -save_path='/content/drive/My Drive/SemEval2021-task4/model/task_1_train/'
+          -save_path='/content/drive/My Drive/SemEval2021-task4/log/task_1_train/'
 ```
 
 ## 4. 其他参考文献
