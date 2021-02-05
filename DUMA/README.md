@@ -47,4 +47,5 @@ $ python Run.py -test_data_path='/content/drive/My Drive/SemEval2021-task4/data/
           -save_path='/content/drive/My Drive/SemEval2021-task4/log/task_1_train/'
 ```
 
-## 4. Ciation
+## 4. Citation
+If our method is useful for your research, please consider citing:
