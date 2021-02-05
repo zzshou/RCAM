@@ -1,6 +1,5 @@
 # XRJL at SemEval-2020 Task 4: Dual Multi-Head Co-Attention for Abstract Meaning Understanding
-## 1. 模型架构
-模型主要参考了论文[《DUMA: Reading Comprehension with Transposition Thinking》](https://arxiv.org/pdf/2001.09415.pdf)，架构如下图所示 (与原论文略有不同，这个是我画的，可能有些地方不易理解)：
+## 1. Model Architecture
 
 <img src="https://github.com/zzshou/RCAM/blob/master/DUMA/model%20architecture.png" width="650" height="650">
 
