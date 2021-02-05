@@ -2,7 +2,7 @@
 """
 Created on Mon Jan 11 13:34:21 2021
 
-@author: 31906
+@author: JIANG Yuxin
 """
 
 
@@ -10,14 +10,14 @@ import argparse
 
 
 def arg_conf():
-    parser = argparse.ArgumentParser(description = 'DUMA')
+    parser = argparse.ArgumentParser(description = 'SemEval Task 4')
     
     # parameters of environment
     parser.add_argument('-cuda', type=int, default=0, help="which device, default gpu.")
     parser.add_argument('-random_seed', type=int, default=2021, help='set the random seed so that we can reporduce the result.')
     
     # parameters of data processor
-    parser.add_argument('-train_data_paths', nargs='+', default=None, help='data paths of multi train datasets.')
+    parser.add_argument('-train_data_paths', nargs='+', default=None, help='data paths of multi train datasets(could be used for multi-task learning).')
     parser.add_argument('-dev_data_path', default=None, help='data path of eval dataset.')
     parser.add_argument('-test_data_path', default=None, help='data path of test dataset.')
     parser.add_argument('-n_choice', type=int, default=5, help='number of choices.')
@@ -46,12 +46,11 @@ def arg_conf():
     parser.add_argument("-max_grad_norm", type=float, default=10.0, help="Max gradient norm.")
     parser.add_argument('-weight_decay', type=float, default=0.01, help='regularize parameters')
     parser.add_argument('-lr', type=float, default=5e-6, help='initial learning rate')
-    parser.add_argument('-save_path', default=None, help='model save path') 
+    parser.add_argument('-save_path', default=None, help='model save path, evaluation save path and prediction save path.') 
 
     # args = parser.parse_args()
-    args = parser.parse_known_args()[0] #类jupyter环境下用这个
+    args = parser.parse_known_args()[0]
 
-    # 打印出对象的属性和方法
     print(vars(args))
     return args
 
