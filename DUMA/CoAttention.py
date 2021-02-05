@@ -2,11 +2,11 @@
 """
 Created on Mon Jan 11 12:25:20 2021
 
-@author: 31906
+@author: JIANG Yuxin
 """
 
 
-''' Define the Co-Attention layer '''
+''' Define the Multi Head Co-Attention layer '''
 
 import torch
 import torch.nn as nn
