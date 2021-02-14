@@ -98,12 +98,12 @@ class MultiChoiceModel(nn.Module):
             choice_output, _ = co_attention_layer(q=choice_output, k=article_output, v=article_output, mask=a_to_c_mask)
             article_output, _ = co_attention_layer(q=article_output, k=choice_output, v=choice_output, mask=c_to_a_mask)
         
-        # use mean pooling to pool the sequence output of co-attention
-        AvgPooling1 = nn.AvgPool1d(choice_output.shape[1])
-        choice_to_article = AvgPooling1(choice_output.permute(0,2,1)).squeeze(-1) #(batch*n_choice, d_hid)
+        # use max pooling to pool the sequence output of co-attention
+        MaxPooling1 = nn.MaxPool1d(choice_output.shape[1])
+        choice_to_article = MaxPooling1(choice_output.permute(0,2,1)).squeeze(-1) #(batch*n_choice, d_hid)
         
-        AvgPooling2 = nn.AvgPool1d(article_output.shape[1])
-        article_to_choice = AvgPooling2(article_output.permute(0,2,1)).squeeze(-1) #(batch*n_choice, d_hid)
+        MaxPooling2 = nn.MaxPool1d(article_output.shape[1])
+        article_to_choice = MaxPooling2(article_output.permute(0,2,1)).squeeze(-1) #(batch*n_choice, d_hid)
         
         # concatenate the two pooled output
         fuze = torch.cat((choice_to_article, article_to_choice), 1) #(batch*n_choice, d_hid*2)
