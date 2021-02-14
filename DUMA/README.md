@@ -4,7 +4,7 @@ This repository gives a Pytorch implementation of the method in the system descr
 
 ## 1. Model Architecture
 
-<img src="https://github.com/zzshou/RCAM/blob/master/DUMA/model%20architecture.png" width="600" height="800">
+<img src="https://github.com/zzshou/RCAM/blob/master/DUMA/model%20architecture.png" width="400" height="600">
 
 ## 2. Model training and evaluating
 Directly run Run.py file on the console (Please refer to Config.py for the specific meaning of each parameter):
