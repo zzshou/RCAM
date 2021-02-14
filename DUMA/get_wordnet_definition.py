@@ -185,7 +185,7 @@ def get_wordnet_definition(question, word_str):
 
 def add_wordnet_definition(file):
     output_file = file.replace('.jsonl', '-wordnet.jsonl')
-    with open(file, 'r') as f, open(output_file, 'w') as wf:
+    with open(file, mode='r', encoding="utf8") as f, open(output_file, mode='w', encoding="utf8") as wf:
         for line in tqdm(f):
             data = json.loads(line)
             question = data['question']
