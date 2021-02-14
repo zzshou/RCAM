@@ -1,4 +1,3 @@
-import re
 import json
 from tqdm import tqdm
 import nltk
@@ -205,6 +204,7 @@ def add_wordnet_definition(file):
             definitions = get_wordnet_definition(question, option)
             data['option_4'] = {'ans': option, 'definitions': '.'.join(definitions)}
             wf.write(json.dumps(data) + '\n')
+    return output_file
 
 
 if __name__ == '__main__':
