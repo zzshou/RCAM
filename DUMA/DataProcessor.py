@@ -144,49 +144,7 @@ def convert_features_to_dataset(features, is_labeling):
     else:
         return TensorDataset(all_input_ids, all_input_mask, all_segment_ids, all_length)
 
-
-def generate_choice(parser, option, question, add_wiki):
-    choice = question.replace('@placeholder', option)
-    if add_wiki:
-        syns, ts = get_wiki_definition(parser, option)
-        if syns:
-            ts = syns + " " + ts
-            choice_length = len(choice)
-            text = ts[:min(len(ts), choice_length)]
-            choice = choice + ' ' + text
-        else:
-            choice_length = len(choice)
-            text = ts[:min(len(ts), choice_length)]
-            choice = choice + ' ' + text
-    print(choice)
-    return choice
-
-
-def get_wiki_definition(parser, word_str):
-    word = parser.fetch(word_str)
-    syns = []
-    ts = []
-    for item in word:
-        for definition in item['definitions']:
-            relatedWords = definition['relatedWords']
-            for word in relatedWords:
-                if word['relationshipType'] == 'synonyms':
-                    syn = ' '.join(
-                        [re.sub('\(.*\):+|see Thesaurus:|and Thesaurus:|See also Thesaurus:|see also Thesaurus:', '',
-                                item).strip() for item
-                         in word['words']])
-                    syns.append(syn)
-            text = definition['text']
-            for t in text:
-                t = re.sub('\(((?!\)).)*\)|\[((?!\]).)*\]', ';', t).strip()
-                t = re.sub('^([;\s]+)|([;\s]+)$', '', t).strip()
-                t = re.sub(';\.', '.', t).strip()
-                if not t == word_str:
-                    ts.append(t)
-    syns = ';'.join(syns)
-    ts = ' '.join(ts)
-    return syns, ts
-
+    
 
 if __name__ == "__main__":
     train_examples = read_recam('/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_train.jsonl', is_labeling=True, add_wiki=True)
