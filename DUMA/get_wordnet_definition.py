@@ -214,4 +214,3 @@ if __name__ == '__main__':
         syns = get_wordnet_definition('A girl @placeholder leukaemia has received a \" get well soon \" video message',
                                        word)
         print(syns)
-        # print(ts)
