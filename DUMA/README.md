@@ -1,4 +1,4 @@
-# XRJL at SemEval-2020 Task 4: Dual Multi-Head Co-Attention for Abstract Meaning Understanding
+# XRJL at SemEval-2021 Task 4: Dual Multi-Head Co-Attention for Abstract Meaning Understanding
 
 This repository gives a Pytorch implementation of the method in the system description paper (see in Citation).
 
