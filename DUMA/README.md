@@ -1,10 +1,10 @@
-# XRJL at SemEval-2020 Task 4: Dual Multi-Head Co-Attention for Abstract Meaning Understanding
+# XRJL at SemEval-2021 Task 4: Dual Multi-Head Co-Attention for Abstract Meaning Understanding
 
 This repository gives a Pytorch implementation of the method in the system description paper (see in Citation).
 
 ## 1. Model Architecture
 
-<img src="https://github.com/zzshou/RCAM/blob/master/DUMA/model%20architecture.png" width="600" height="800">
+<img src="https://github.com/zzshou/RCAM/blob/master/DUMA/model%20architecture.png" width="400" height="600">
 
 ## 2. Model training and evaluating
 Directly run Run.py file on the console (Please refer to Config.py for the specific meaning of each parameter):
