@@ -21,7 +21,8 @@ def arg_conf():
     parser.add_argument('-dev_data_path', default=None, help='data path of eval dataset.')
     parser.add_argument('-test_data_path', default=None, help='data path of test dataset.')
     parser.add_argument('-n_choice', type=int, default=5, help='number of choices.')
-    parser.add_argument('-max_seq_len', type=int, default=150, help='max sequence length of article + question.')
+    parser.add_argument('-max_seq_len', type=int, default=150, help='max sequence length of article + question + definition.')
+    parser.add_argument('-add_definition', action='store_true', help='if add_definition, default False')
     
     # parameters of model
     parser.add_argument('-checkpoint', default=None, help='if use fine-tuned bert model, please enter the checkpoint path.')
