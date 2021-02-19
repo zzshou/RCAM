@@ -288,20 +288,20 @@ if __name__ == "__main__":
         logger.info("***** Loading training data *****")
         train_datasets = []
         for train_data_path in args.train_data_paths:
-            train_examples = read_recam(train_data_path, is_labeling=True, add_definition=True)
+            train_examples = read_recam(train_data_path, is_labeling=True, add_definition=args.add_definition)
             train_features = convert_examples_to_features(train_examples, tokenizer, max_seq_len=args.max_seq_len)
             train_dataset = convert_features_to_dataset(train_features, is_labeling=True)
             train_datasets.append(train_dataset)
             
     if args.dev_data_path:
         logger.info("***** Loading evaluating data *****")
-        evaluate_examples = read_recam(args.dev_data_path, is_labeling=True, add_definition=True)
+        evaluate_examples = read_recam(args.dev_data_path, is_labeling=True, add_definition=args.add_definition)
         evaluate_features = convert_examples_to_features(evaluate_examples, tokenizer, max_seq_len=args.max_seq_len)
         evaluate_dataset = convert_features_to_dataset(evaluate_features, is_labeling=True)
         
     if args.test_data_path:
         logger.info("***** Loading testing data *****")
-        test_examples = read_recam(args.test_data_path, is_labeling=False, add_definition=True)
+        test_examples = read_recam(args.test_data_path, is_labeling=False, add_definition=args.add_definition)
         test_features = convert_examples_to_features(test_examples, tokenizer, max_seq_len=args.max_seq_len)
         test_dataset = convert_features_to_dataset(test_features, is_labeling=False)
     
