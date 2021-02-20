@@ -6,7 +6,7 @@ Prerequisite: python >=3.6, torch>=1.0, transformers>=3.0.
 
 ## 1. Model Architecture
 
-<img src="https://github.com/zzshou/RCAM/blob/master/model/model%20architecture.png" width="400" height="600">
+<img src="https://github.com/zzshou/RCAM/blob/master/Model/model%20architecture.png" width="400" height="600">
 
 ## 2. Model training and evaluating
 You are highly recommanded to run our code on **Google Colab**, where you could get free GPU resources.  
