@@ -12,6 +12,7 @@ Directly run Run.py file on the console (Please refer to Config.py for the speci
 $ python Run.py -train_data_paths '/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_train.jsonl' \
           -dev_data_path='/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_dev.jsonl' \
           -n_choice=5 \
+          -add_definition \
           -max_seq_len=150 \
           -bert_model='albert-xxlarge-v2' \
           -n_layer=1 \
@@ -38,6 +39,7 @@ Directly run Run.py file on the console (Please refer to Config.py for the speci
 $ python Run.py -test_data_path='/content/drive/My Drive/SemEval2021-task4/data/test_data/Task_1_test.jsonl' \
           -n_choice=5 \
           -max_seq_len=150 \
+          -add_definition \
           -checkpoint='/content/drive/My Drive/SemEval2021-task4/log/task_1_train/model-2021-01-20.pt' \
           -bert_model='albert-xxlarge-v2' \
           -n_layer=1 \
