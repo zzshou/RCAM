@@ -20,8 +20,6 @@ class MultiChoiceModel(nn.Module):
             param.requires_grad = is_requires_grad
         self.d_hid = model.config.hidden_size
         self.args = args
-        if args.n_last_layer > 1:
-            self.W = nn.Linear(args.n_last_layer, 1, bias=False)
         self.dropout = nn.Dropout(0.1)
         self.layer_norm = nn.LayerNorm(self.d_hid, eps=1e-6)
         self.layer_stack = nn.ModuleList([
