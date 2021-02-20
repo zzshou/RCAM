@@ -2,6 +2,8 @@
 
 This repository gives a Pytorch implementation of the method in the system description paper (see in Citation).
 
+Prerequisite: python >=3.6, torch>=1.0, transformers>=3.0.
+
 ## 1. Model Architecture
 
 <img src="https://github.com/zzshou/RCAM/blob/master/DUMA/model%20architecture.png" width="400" height="600">
@@ -31,7 +33,7 @@ It's convenient to implement, just open a notebook and run the "Run.py" file (Pl
           -max_grad_norm=10.0 \
           -weight_decay=0.01 \
           -lr=5e-6 \
-          -save_path='/content/drive/My Drive/SemEval2021-task4/log/task_1_train/'
+          -save_path='/content/drive/My Drive/SemEval2021-task4/log/task_1/'
 ```
 
 ## 3. Model predicting
@@ -41,7 +43,7 @@ Open a notebook and run the "Run.py" file (Please refer to Config.py for the spe
           -n_choice=5 \
           -max_seq_len=150 \
           -add_definition \
-          -checkpoint='/content/drive/My Drive/SemEval2021-task4/log/task_1_train/model-2021-01-20.pt' \
+          -checkpoint='/content/drive/My Drive/SemEval2021-task4/log/task_1/model-2021-01-20.pt' \
           -bert_model='albert-xxlarge-v2' \
           -n_layer=1 \
           -n_head=64 \
@@ -50,7 +52,7 @@ Open a notebook and run the "Run.py" file (Please refer to Config.py for the spe
           -dropout=0.1 \
           -do_test \
           -batch_size=2 \
-          -save_path='/content/drive/My Drive/SemEval2021-task4/log/task_1_train/'
+          -save_path='/content/drive/My Drive/SemEval2021-task4/log/task_1/'
 ```
 
 ## 4. Citation
