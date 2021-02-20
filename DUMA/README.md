@@ -7,9 +7,10 @@ This repository gives a Pytorch implementation of the method in the system descr
 <img src="https://github.com/zzshou/RCAM/blob/master/DUMA/model%20architecture.png" width="400" height="600">
 
 ## 2. Model training and evaluating
-Directly run Run.py file on the console (Please refer to Config.py for the specific meaning of each parameter):
+You are highly recommanded to run our code on **Google Colab**, where you could get free GPU resources.  
+It's convenient to implement, just open a notebook and run the "Run.py" file (Please refer to Config.py for the specific meaning of each parameter):
 ```
-$ python Run.py -train_data_paths '/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_train.jsonl' \
+! python Run.py -train_data_paths '/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_train.jsonl' \
           -dev_data_path='/content/drive/My Drive/SemEval2021-task4/data/training_data/Task_1_dev.jsonl' \
           -n_choice=5 \
           -add_definition \
@@ -34,9 +35,9 @@ $ python Run.py -train_data_paths '/content/drive/My Drive/SemEval2021-task4/dat
 ```
 
 ## 3. Model predicting
-Directly run Run.py file on the console (Please refer to Config.py for the specific meaning of each parameter):
+Open a notebook and run the "Run.py" file (Please refer to Config.py for the specific meaning of each parameter):
 ```
-$ python Run.py -test_data_path='/content/drive/My Drive/SemEval2021-task4/data/test_data/Task_1_test.jsonl' \
+! python Run.py -test_data_path='/content/drive/My Drive/SemEval2021-task4/data/test_data/Task_1_test.jsonl' \
           -n_choice=5 \
           -max_seq_len=150 \
           -add_definition \
