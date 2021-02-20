@@ -2,16 +2,16 @@
 """
 Created on Sun Jan 10 17:21:22 2021
 
-@author: 31906
+@author: JIANG Yuxin
 """
 
+import os
 import jsonlines
 import torch
 from tqdm import tqdm
 from transformers import AutoTokenizer
 from torch.utils.data import TensorDataset, DataLoader
 from get_wordnet_definition import add_wordnet_definition
-import re
 
 
 class SemEvalExample(object):
@@ -69,18 +69,23 @@ def read_recam(path, is_labeling, add_definition=False):
 
     """
     if add_definition:
-        add_wordnet_definition_path = add_wordnet_definition(path)
+        
+        if os.path.exists(path.replace('.jsonl', '-wordnet.jsonl')):
+            add_wordnet_definition_path = path.replace('.jsonl', '-wordnet.jsonl')
+        else:
+            add_wordnet_definition_path = add_wordnet_definition(path)
+            
         with open(add_wordnet_definition_path, mode='r', encoding="utf8") as f:
             reader = jsonlines.Reader(f)
             examples = []
             for line in reader:
                 example = SemEvalExample(
                     article = line['article'],
-                    choice_0 = line['question'].replace('@placeholder', line['option_0']['ans'] + ' ' + line['option_0']['definitions']),
-                    choice_1 = line['question'].replace('@placeholder', line['option_1']['ans'] + ' ' + line['option_1']['definitions']),
-                    choice_2 = line['question'].replace('@placeholder', line['option_2']['ans'] + ' ' + line['option_2']['definitions']),
-                    choice_3 = line['question'].replace('@placeholder', line['option_3']['ans'] + ' ' + line['option_3']['definitions']),
-                    choice_4 = line['question'].replace('@placeholder', line['option_4']['ans'] + ' ' + line['option_4']['definitions']),
+                    choice_0 = line['question'].replace('@placeholder', line['option_0']['ans']) + '##SEP##' + line['option_0']['definitions'],
+                    choice_1 = line['question'].replace('@placeholder', line['option_1']['ans']) + '##SEP##' + line['option_1']['definitions'],
+                    choice_2 = line['question'].replace('@placeholder', line['option_2']['ans']) + '##SEP##' + line['option_2']['definitions'],
+                    choice_3 = line['question'].replace('@placeholder', line['option_3']['ans']) + '##SEP##' + line['option_3']['definitions'],
+                    choice_4 = line['question'].replace('@placeholder', line['option_4']['ans']) + '##SEP##' + line['option_4']['definitions'],
                     label = int(line['label']) if is_labeling else None,
                 )
                 examples.append(example)
@@ -113,12 +118,17 @@ def convert_examples_to_features(examples, tokenizer, max_seq_len):
         choices_features = []
 
         for choice_index, choice in enumerate(example.choices):
-            choice_tokens = tokenizer.tokenize(choice)           
-            _truncate_seq_pair(article_tokens, choice_tokens, max_seq_len - 3)
+            if len(choice.split('##SEP##')) > 1:
+                choice, definition = choice.split('##SEP##')
+            else:
+                definition = ''
+            choice_tokens = tokenizer.tokenize(choice)
+            definition_tokens = tokenizer.tokenize(definition)
+            _truncate_seq_pair(article_tokens, choice_tokens, definition_tokens, max_seq_len - 3)
 
             length = len(article_tokens) + 1
-            tokens = ["[CLS]"] + article_tokens + ["[SEP]"] + choice_tokens + ["[SEP]"]
-            segment_ids = [0] * (length + 1) + [1] * (len(choice_tokens) + 1)
+            tokens = ["[CLS]"] + article_tokens + ["[SEP]"] + choice_tokens + definition_tokens + ["[SEP]"]
+            segment_ids = [0] * (length + 1) + [1] * (len(choice_tokens) + len(definition_tokens) + 1)
 
             input_ids = tokenizer.convert_tokens_to_ids(tokens)
             input_mask = [1] * len(input_ids)
@@ -141,7 +151,7 @@ def convert_examples_to_features(examples, tokenizer, max_seq_len):
     return features
 
 
-def _truncate_seq_pair(tokens_a, tokens_b, max_length):
+def _truncate_seq_pair(tokens_a, tokens_b, definiton_token, max_length):
     """Truncates a sequence pair in place to the maximum length."""
     # This is a simple heuristic which will always truncate the longer sequence
     # one token at a time. This makes more sense than truncating an equal percent
@@ -149,13 +159,19 @@ def _truncate_seq_pair(tokens_a, tokens_b, max_length):
     # that's truncated likely contains more information than a longer sequence.
     
     while True:
-        total_length = len(tokens_a) + len(tokens_b)
+        total_length = len(tokens_a) + len(tokens_b) + len(definiton_token)
+        
         if total_length <= max_length:
             break
-        if len(tokens_a) > len(tokens_b):
+        if len(definiton_token) > len(tokens_b):
+            definiton_token.pop()
+        elif len(tokens_a) > (len(definiton_token) + len(definiton_token)):
             tokens_a.pop()
+        elif len(definiton_token) > 0:
+            definiton_token.pop()
         else:
-            tokens_b.pop()
+            tokens_a.pop()
+            print('option is longer than article')
             
             
 def select_field(features, field):
