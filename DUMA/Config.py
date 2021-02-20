@@ -22,12 +22,11 @@ def arg_conf():
     parser.add_argument('-test_data_path', default=None, help='data path of test dataset.')
     parser.add_argument('-n_choice', type=int, default=5, help='number of choices.')
     parser.add_argument('-max_seq_len', type=int, default=150, help='max sequence length of article + question + definition.')
-    parser.add_argument('-add_definition', action='store_true', help='if add_definition, default False')
+    parser.add_argument('-add_definition', action='store_true', help='if add definition from WordNet, default False')
     
     # parameters of model
     parser.add_argument('-checkpoint', default=None, help='if use fine-tuned bert model, please enter the checkpoint path.')
     parser.add_argument('-bert_model', default=None, help='model name can be accessed from huggingface')
-    parser.add_argument('-n_last_layer', default=1, type=int, help='weighted sum of last layers of bert model')
     # parameters of co-attention
     parser.add_argument('-n_layer', type=int, default=1, help='num of layer in co-attention') 
     parser.add_argument('-n_head', type=int, default=64, help='num of head in co-attention') 
