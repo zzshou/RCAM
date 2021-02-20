@@ -1,4 +1,4 @@
-# XRJL at SemEval-2021 Task 4: Dual Multi-Head Co-Attention for Abstract Meaning Understanding
+# XRJL-HKUST at SemEval-2021 Task 4: WordNet-Enhanced Dual Multi-head Co-Attention for Reading Comprehension of Abstract Meaning
 
 This repository gives a Pytorch implementation of the method in the system description paper (see in Citation).
 
