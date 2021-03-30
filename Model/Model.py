@@ -70,18 +70,28 @@ class MultiChoiceModel(nn.Module):
         article_output = sequence_output[:, :max_a_len, :] #take out article_output according to the maximum length of article
         choice_output = sequence_output[:, -(max_c_len+1):-1, :] #take out choice_output according to the maximum length of choice
         
-        def create_mask(lengths, n_choice):
-            """ Generate attention mask according to the length of article in each example  """
+        def create_a_to_c_mask(lengths, n_choice):
+            """ Generate article_to_choice attention mask according to the length of article in each example  """
             mask = []
             for i in lengths:
                 a = np.zeros((max_c_len, max_a_len))
-                a[max_c_len-(self.args.max_seq_len-2-i):, :i] = np.ones((self.args.max_seq_len-2-i, i))
+                a[:, :i] = np.ones((max_c_len, i))
+                a = [a] * n_choice
+                mask.extend(a)
+            return torch.tensor(mask, dtype=torch.long)
+            
+        def create_c_to_a_mask(lengths, n_choice):
+            """ Generate choice_to_article attention mask according to the length of article in each example  """
+            mask = []
+            for i in lengths:
+                a = np.zeros((max_a_len, max_c_len))
+                a[:, max_c_len-(self.args.max_seq_len-2-i):] = np.ones((max_a_len, self.args.max_seq_len-2-i))
                 a = [a] * n_choice
                 mask.extend(a)
             return torch.tensor(mask, dtype=torch.long)
         
-        a_to_c_mask = create_mask(lengths, n_choice=self.args.n_choice).to(self.args.device) #(batch*n_choice, max_c_len, max_a_len)
-        c_to_a_mask = a_to_c_mask.permute(0, 2, 1) #(batch*n_choice, max_a_len， max_c_len)
+        a_to_c_mask = create_a_to_c_mask(lengths, n_choice=self.args.n_choice).to(self.args.device) #(batch*n_choice, max_c_len, max_a_len)
+        c_to_a_mask = create_c_to_a_mask(lengths, n_choice=self.args.n_choice).to(self.args.device) #(batch*n_choice, max_c_len, max_a_len)
         
         # compute co-attention between article and choice
         for co_attention_layer in self.layer_stack: 
