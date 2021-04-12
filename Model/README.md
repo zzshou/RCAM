@@ -57,3 +57,23 @@ Open a notebook and run the "Run.py" file (Please refer to Config.py for the spe
 
 ## 4. Citation
 If our method is useful for your research, please consider citing:
+```
+@article{DBLP:journals/corr/abs-2103-16102,
+  author    = {Yuxin Jiang and
+               Ziyi Shou and
+               Qijun Wang and
+               Hao Wu and
+               Fangzhen Lin},
+  title     = {{XRJL-HKUST} at SemEval-2021 Task 4: WordNet-Enhanced Dual Multi-head
+               Co-Attention for Reading Comprehension of Abstract Meaning},
+  journal   = {CoRR},
+  volume    = {abs/2103.16102},
+  year      = {2021},
+  url       = {https://arxiv.org/abs/2103.16102},
+  archivePrefix = {arXiv},
+  eprint    = {2103.16102},
+  timestamp = {Wed, 07 Apr 2021 15:31:46 +0200},
+  biburl    = {https://dblp.org/rec/journals/corr/abs-2103-16102.bib},
+  bibsource = {dblp computer science bibliography, https://dblp.org}
+}
+```
