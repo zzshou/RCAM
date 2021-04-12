@@ -1,6 +1,6 @@
 # SemEval2021-Reading-Comprehension-of-Abstract-Meaning
 
-This is the repository for SemEval 2021 Task 4: Reading Comprehension of Abstract Meaning. It includes code for baseline models and data.
+This is the repository for SemEval 2021 Task 4: Reading Comprehension of Abstract Meaning. It includes code for baseline models and data. For more details, please see the **"Model"** file.
 
 ## Data
 **Data Format**
