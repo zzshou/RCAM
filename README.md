@@ -1,8 +1,9 @@
 # SemEval2021-Reading-Comprehension-of-Abstract-Meaning
 
-This is the repository for [SemEval 2021 Task 4: Reading Comprehension of Abstract Meaning](https://competitions.codalab.org/competitions/26153). It includes code for baseline models and data. For more details, please see the **"Model"** file.
+This is the repository for our ACL-IJCNLP 2021 SemEval workshop paper [XRJL-HKUST at SemEval-2021 Task 4: WordNet-Enhanced Dual Multi-head Co-Attention for Reading Comprehension of Abstract Meaning](https://aclanthology.org/2021.semeval-1.105/). It includes code for baseline models and data. For more details, please see the **"Model"** file.
 
 ## Data
+### The dataset is described in [SemEval 2021 Task 4: Reading Comprehension of Abstract Meaning](https://competitions.codalab.org/competitions/26153).
 **Data Format**
 
 Data is stored one-question-per-line in json format. Each instance of the data can be trated as a python dictinoary object. See examples below for further help in reading the data.
